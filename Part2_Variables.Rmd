@@ -1,0 +1,347 @@
+
+
+
+## Part Two - Data processing
+
+
+Here follow multiple data handling operations. 
+
+
+The following script elements reduce the database to trip, person and household level.
+
+They also give some guidance on how to aggregate the information available at a lower level.
+
+They are written using R base functions and tidyverse functions. Just choose the one you want to apply.
+
+### Number of trips
+
+Analyzing the number of trips, you should check that 44 observations are: `nbd = 22`
+
+These are persons that declare 22 trips in their day. For one individual this value is repeated 22 times in the DF ! We deduce that on ly 2 persons have done 22 trips in their day...
+
+```{r echo=TRUE, eval=T}
+table(allgre.PB_V2$nbd)
+```
+
+
+```{r echo=TRUE, eval=T}
+# or
+DF <- allgre.PB_V2 %>% dplyr::select(sexe, nbd) %>% table()
+kable(DF)  
+```
+
+`nbd` was determined counting the trips in the DF for each individual.  `NO_DEPL` is the number of trips determined by the survey institution.
+
+Studying the number of trips (`NO_DEPL`), we see that 2 trips are numbered 22.
+
+```{r echo=TRUE, eval=T}
+# Check of NO_DEPL - number of trips
+table(allgre.PB_V2$NO_DEPL)
+```
+
+We can check that each trip (observation) is associated to an unique  `id`.
+
+We see that `r table(allgre.PB_V2$NO_DEPL)[2]` trips have no number. These are lines for individuals without any trips: immobile persons
+
+> A half empty line describe the individual but not the trip
+
+
+Identification key is created for each trip using individual ID and the trip number
+
+```{r echo=TRUE, eval=T}
+# Creation of new id_depl
+allgre.PB_V2$id_depl <- allgre.PB_V2$id_pers * 10  + allgre.PB_V2$NO_DEPL 
+table(is.na(allgre.PB_V2$id_depl))
+table(allgre.PB_V2$nbd)
+```
+
+Or
+
+```{r}
+allgre.PB_V2 %>% dplyr::mutate(
+  id_depl = id_pers * 10  + NO_DEPL) %>%
+  select(id_depl) %>% is.na() %>%   table()
+allgre.PB_V2 %>% select(nbd) %>% table()
+```
+
+\newpage
+
+## New Variables Definition
+
+### Immobil person
+
++ we point individual that have at least one trip in the day (`nbd != O` $\leftrightarrow nbd \neq 0$)
+
+```{r}
+allgre.PB_V2$UN <- as.numeric(allgre.PB_V2$nbd !=0)
+table(as.numeric(allgre.PB_V2$UN))
+```
+
+or
+
+```{r, message=FALSE}
+allgre.PB_V2 <- allgre.PB_V2 %>% dplyr::mutate(  UN =  as.numeric(nbd !=0) )
+
+allgre.PB_V2 %>%  dplyr::select(UN)  %>% table()
+```
+
+### Area number redefinition
+
++ Location area of origin and destination of trips are recoded through a simple transformation:
+
+
+```{r, message=FALSE}
+allgre.PB_V2 <- allgre.PB_V2 %>% dplyr::mutate(  
+  UN =  as.numeric(nbd !=0) ,
+  DEST = round(zonedest/1000),
+  ORIG = round(zoneorig/1000) ,
+  )
+
+head(allgre.PB_V2$DEST)
+head(allgre.PB_V2$ORIG)
+table(allgre.PB_V2$ORIG)
+```
+
+
+
+
+### Average travelled distances per area
+
++ we calculate the average distance as crow flies (`D12`) and the distance through the transport network (`D13`)
++ we count the number of `NA` (non observed) distances (`D12`) 
++ we calculate the average travelled distance (`D12`) given the residential location of individual
+
+> averages are calculated at the residential location area; but non stored in the DF!
+
+```{r}
+mean(allgre.PB_V2$D12, na.rm = T)
+mean(allgre.PB_V2$D13, na.rm = T)
+summary(allgre.PB_V2$D12)
+# nombre de distance 'NA' par zone
+table(allgre.PB_V2$zoneres.y[is.na(allgre.PB_V2$D12)==1])
+# tapply(allgre.PB_V2$D12, as.factor(allgre.PB_V2$zoneres.y),mean, na.rm = TRUE)
+```
+
+Or
+
+```{r eval=T}
+# allgre.PB_V2 %>% select(D12, D13) %>% skim()
+
+allgre.PB_V2 %>% select(D12, D13) %>% summarize_each(funs(mean(., na.rm = TRUE)))
+
+allgre.PB_V2 %>% 
+  group_by(zoneres.y) %>% 
+  select(D12, D13) %>% 
+  summarize_each( funs(mean(., na.rm = TRUE)))
+
+allgre.PB_V2 %>%
+  group_by(zoneres.y) %>%
+  summarise(across(D12:D13,~mean(.x, na.rm = TRUE)))
+```
+
+## Factorisation
+
++ We define qualitative variables (categorical variables) as **factor** and we associate labels to their modalities
+
+```{r}
+## GRENOBLE 2010		 :
+#######
+table(allgre.PB_V2$OCCU1 )
+allgre.PB_V2$statut2 <- factor(allgre.PB_V2$OCCU1 , 
+                               labels=c("TRAVAIL A TEMPS PLEIN",
+                        "TRAVAIL A TEMPS PARTIEL","FORMATION STAGE","ETUDIANT", "SCOLAIRE",
+                        "CHOMEUR","RETRAITE", "RESTE AU FOYER", "AUTRE"))
+table(allgre.PB_V2$statut2)
+#####
+levels(allgre.PB_V2$statut2) <-  c("ACTIF","ACTIF", "ACTIF", "ETUDIANT",
+                                   "SCOLAIRE", "CHOMEUR","RETRAITE", 
+                                   "RESTE AU FOYER", "AUTRE")
+table(allgre.PB_V2$statut2)
+#####
+allgre.PB_V2$cspgroup <- trunc(allgre.PB_V2$csp / 10)
+allgre.PB_V2$cspgroup[allgre.PB_V2$pcs %in% c(81,82)] <- 7
+allgre.PB_V2$cspgroup[is.na(allgre.PB_V2$cspgroup)==T] <- 9
+table(allgre.PB_V2$cspgroup)
+
+
+allgre.PB_V2 <- allgre.PB_V2 %>% mutate(
+  mot_o_red = factor( case_when(
+                motifor %in% c( 1, 2)	~ 1, #  domicile & residence secondaire
+                motifor %in% c(11, 12) 	~ 2, 	#	/*travail*/
+                motifor %in% c(21, 22, 26)	~ 3, 	#	/*primaire*/
+                motifor %in% c(23, 24, 27, 28)  ~ 4 ,	#	/*col-lyc*/
+                motifor %in% c( 25, 29)		~ 5,  # /*univ*/
+                30 < motifor & motifor < 44	~ 6,	#	/*achat serv*/
+                 49 < motifor & motifor < 55	~ 7,	#	/*loisir*/
+                 60 < motifor & motifor < 75	~ 8,	#	/*acct*/
+                 motifor == 91 | motifor == NA	~ 9, #	/*autre*/
+                 motifor == 81 		~ 10	,  #/*tournee prof*/
+                (motifdes == 91 | motifdes == NA	) & nbd==0 ~ 0
+                # else 0
+                ))
+  , mot_d_red = factor( case_when(
+                motifdes %in% c( 1, 2)	~ 1, #  domicile & residence secondaire
+                motifdes %in% c(11, 12) 	~ 2, 	#	/*travail*/
+                motifdes %in% c(21, 22, 26)	~ 3, 	#	/*primaire*/
+                motifdes %in% c(23, 24, 27, 28)  ~ 4 ,	#	/*col-lyc*/
+                motifdes %in% c( 25, 29)		~ 5,  # /*univ*/
+                30 < motifdes & motifdes < 44	~ 6,	#	/*achat serv*/
+                 49 < motifdes & motifdes < 55	~ 7,	#	/*loisir*/
+                 60 < motifdes & motifdes < 75	~ 8,	#	/*acct*/
+                 motifdes == 91 | motifdes == NA	~ 9, #	/*autre*/
+                 motifdes == 81 		~ 10	,  #/*tournee prof*/
+                (motifdes == 91 | motifdes == NA	) & nbd==0 ~ 0
+                # else 0
+                ))
+  )
+
+motif.red <- c("DOMICILE" , "TRAVAIL" , "ECOLE PRIMAIRE" , "C.E.S.-LYCEE" ,"UNIVERSITE" ,'ACHAT' ,'LOISIR' ,'ACCOMPAGNEMENT' , "AUTRES", "Professionnel")
+allgre.PB_V2$mot_o_red <- factor(allgre.PB_V2$mot_o_red,  labels =  motif.red)
+allgre.PB_V2$mot_d_red <- factor(allgre.PB_V2$mot_d_red,  labels =  motif.red)
+
+```
+
+> Explain what is done in the preceeding operations
+
+### Some variables definitions
+
+For many variables we calculate a sum, a max or mean over a specific group of observations: for ex, the individual sum of trips duration 
+
+
+In these case a strategy maybe to calculate in the DF of trips the indicators and then reduce the DF to the individual level.
+
+> Below, we define the variables at the relevant level and then reduce the DF at the relevant level for anlysis
+
+## Stops DataFrame : 
+
++ We count the number of stays in a trip. 
+
+```{r}
+#    BASE DEPLACEMENTS
+## exemple de calcul : nombre de trajets par déplacement
+allgre.PB_V2$nbt2 <- ave( allgre.PB_V2$NO_TRAJ, allgre.PB_V2$id_depl, FUN = max)
+addmargins( table(allgre.PB_V2$nbt2) )
+```
+
+
+### Trip DataFrame: *Déplacements*
+
++ Total number of stays of each trip of each person
++ Reduction to the DF where 1 line = 1 trip of one person
++ we keep the trips ID without double
++ then we exclude immobile persons
++ finally, we perform some counts and calculus on number of trips, given the transport mode, the trip duration
++ the DF is reduced to the trip DF level
+
+```{r}
+## Réduction au déplacement : ATTENTION On ejecte les immobiles
+allgreD <- distinct(allgre.PB_V2, id_depl, .keep_all = T)
+```
+
+### Person DataFrame *Individus*
+
+
++ Total travel time in a day of each person
++ total number of trips in a day of each person
+
+```{r}
+############
+#    BASE INDIVIDUS
+## exemple de calcul : durée quotidienne des déplacements d'un individu
+allgreD$btt2 <- ave( allgreD$duree, allgreD$id_pers, FUN = sum)
+cpte <- function(x){length(unique(x)) }
+allgreD$nbd2 <- ave( allgreD$NO_DEPL, allgreD$id_pers, FUN = cpte )
+```
+
++ Reduction to  the person level DF using the individual ID
+
+```{r}
+## Reduction
+allgreI <- distinct(allgreD, id_pers, .keep_all = T)
+```
+
+```{r}
+summary(allgreI$btt); summary(allgreI$btt2)
+addmargins( table(allgreI$nbd) )
+table(is.na(allgreI$nbd))
+addmargins( table(allgreI$nbd2) )
+
+# nombre d'incohérences entre Nbd Nbd2
+sum(allgreI$nbd != allgreI$nbd2)
+```
+
+
+Remark: to calculate the daily travel time (BTT), elements `btt` and `btt2` differ due to preprocessing operations to calculate `btt` (correction of error in the declared time of trip)
+
+
++ Number of person in a household, as the maximum of the person number in a household
++ We determine if a least one person in the household holds a driver licence  (using the maximum of the "permis de conduire" variable in the household)
+
+
+```{r}
+############
+#    BASE MENAGE
+## exemple de calcul : taille du ménage et permis-ménage
+allgreI$taillemng <- ave(allgreI$NO_PERS, allgreI$id_men, FUN = max)
+allgreI$Permis_mng <- ave(allgreI$permis, allgreI$id_men, FUN = max)
+addmargins( table(allgreI$taillemng) )
+```
+
+
+
++ Reduction to the household level DF, based on the household ID
+
+```{r}
+## Reduction
+allgreM <- distinct(allgreI, id_men, .keep_all = T)
+    #subset(allgreI, allgreI$NO_PERS == allgreI$taillemng )
+addmargins( table(allgreM$taillemng) )
+addmargins( table(allgreM$Permis_mng) )
+
+table(allgreI$freqtcu)
+table(allgreI$nbd)
+table(allgreI$freqter)
+```
+
+## External Calculus
+
++ Modal share in the DF
+
+```{r}
+# Par mode
+table(allgreD$mode_depl_ag)
+```
+
++ Trip duration
+
+```{r}
+# durée
+addmargins( table(allgreD$duree))
+
+table(is.na(allgreD$duree))
+table(cut(allgreD$duree, breaks=seq(0, max(allgreD$duree, na.rm = T), 30)), useNA = "always")
+```
+
+## Save of the 3 DataFrames: Trip, Person, Household
+
+```{r eval=FALSE, echo=TRUE} 
+#ici on a r eval= FALSE 
+allgreD <- allgreD[, c( c(1:4), c(75:105), 106:109, 112, 114:116, 117:119)]
+allgreI <- allgreI[, c( c(1:3), c(46:74) , 106, 107, 111, 113, 117, 120, 121 )]
+allgreM <- allgreM[,c( c(1,2), c(5:45), 106:109, 110, 124,125  )]
+save(allgreD, file = "allgreD.RData")
+save(allgreI, file = "allgreI.RData")
+save(allgreM, file = "allgreM.RData")
+```
+
+
+## **Your** Data processing
+
+**You should start here**
+You can download these data files and load them:
+
+```{r Load_Data, eval=TRUE}
+load("allgreD.RData")
+load("allgreI.RData")
+load("allgreM.RData")
+```

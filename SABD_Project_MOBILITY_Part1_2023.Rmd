@@ -1,0 +1,479 @@
+---
+title: "SABD Project: Urban Mobility Analysis"
+subtitle: "Part 1 - Project Statement & Organisation "
+author: "I. Joly, C Bobineau, B. Agard"
+date: "2023"
+output: pdf_document
+header-includes:
+  \renewcommand{\contentsname}{Table of Content}
+  \usepackage{tcolorbox}
+  \newtcolorbox{blackbox}{
+  colback=black,
+  colframe=orange,
+  coltext=white,
+  boxsep=5pt,
+  arc=4pt}
+toc: true
+theme: unitedtlm
+link-citations: yes
+biblio-style: apalike
+bibliography: ["biblio/Project_biblio.bib"]
+nocite: |
+  @xie2015, @Chang2013, @xie2016, @Munzner2015, @harrell2013regression
+---
+
+<!-- Installation Instructions  -->
+```{r , eval=F, echo=FALSE}
+# This Rmd document is in the main folder
+# Project should habe subfolder : "biblio" with "Project_biblio.bib" file
+# data file "allgre.PB_V2.RData" is in the main 
+# The FOND_MAP folder contain all the NewESRI.* files
+#    They are usefull to test GIS representation
+```
+
+```{r definitions, echo=FALSE, results='hide'}
+duedate <- "20/01/2024"
+```
+
+
+
+```{r setup, include=FALSE, cache=FALSE}
+## Libraries
+## You may have to install these libraries first 
+## with the tab on bottom right panel : "Packages" ; click install
+## or : install.packages("ggplot2")   - don't forget the ""
+library(tidyverse)
+library(knitr)
+library(ggplot2)
+library(skimr)
+#install.packages("Mongolite")
+library(mongolite)
+
+## Global options
+knitr::opts_chunk$set(               # Here we define behaviours of the code chunks in the Rmd
+               echo=T,        # to display in the generated document code lines (False to hide them; but they will be ran)
+               eval=FALSE,     # to run the chunks
+	             message=FALSE, # to hide in the document R messages while running chuncks
+               warning=FALSE) # to hide in the document R alerts
+knitr::opts_knit$set(width=75)  
+options(max.print="75")       # to define max number of elements (lines) displayed by R when running an instruction
+```
+
+
+# Statement
+
+The MOBILITY project will be introduced to you through 2 parts statement:
+
+1. First part focuses on the DS project organisation (team work, informatic work) and on the workflow for reproducible document writing
+2. Second part focuses on data handling: variables creation, modification, and GIS 
+
+
+## Objectives of the Part 1
+
+This first part of the project is dedicated to :
+
++ the data science work organisation: First step is to make this actual statement file reproducible on your own machine
++ the team work organisation: Second step is to define team and choose a topic to work on during the semester
++ Start looking at the literature relevant to help choosing the topic / discover the topic
+
+Keywords of the literature for the following proposed  topics are:
+
+Urban mobility, public transport, motorized mode of transport, transport behavior, mode choice, traveled distance, travel time, residential location
+
+Suggested scientific reviews on the topics are: Transportation; Transportation Research (part A to E); Transportation research record; Transport review; International journal of Transport Economics; International Journal of Choice Modeling
+
+***
+
+\newpage
+
+## Project Statement
+
+- This project is a **3 or 4** students group work. 
+- All groups work on the same database, with same expectations, but different angles and problematic. 
+- Precisely, each group has a specific **scientific question** (from the topics list at the end of this paper - topic assignment to group is randomly determined)
+- Each topic points:
+  1. A variable of interest  $Y$
+  2. A Set explicit variables to be **systematically included** in the analysis  $X$ and $Z$
+  3. A topic's specific focus to be integrated in the analysis - variables describing this focus will have to be *identified / chosen*  and **justified** by the students (new variable $W$)
+
+- Each topic will be analyzed based on the following approach:
+  1. **Present and describe** the dataset you are using (without giving priority to one variable over another): remarkable characteristics, properties of the different variables, underlying structures, creation of variables, factorization, etc.
+  2. **Summary statistics**: Produce and draw conclusions from **Univariate and bivariate** study of each of the variables:
+       + *Variable to be explained*
+       + *Imposed variables* and their contribution to the explanation of the variable of interest
+       + *Relevant variable to be chosen for topic's specific focus*)
+  3. **Assumptions and Strategy Proposition**: Based on your *knowledge* of the topic, the **literature** (at least one relevant and well chosen paper is expected), and the former **summary statistics**: 
+       + *Define* and **justify** your strategy of analysis of the topic: what are the expected factors of the variable of interest?; what are your methodological choices (types of analysis, method, model,...)?  what is your strategy (subsetting, algorithm, data handling,...)?
+  4. The **specific focus**  influence on the variable of interest will be examined. For that you will construct a new variable $W$ that will synthesize a subset of other variables. You are asked to :
+      + Select all pertinent variables related to the specific focus
+      + Prepare all considered variables in order to create groups of users with similar specific focus situation
+      +	Cluster your dataset using those variables, clusters are stored in new variable $W$
+      +	Analyze your clusters relatively to the specific focus variables
+      +	Eventually iteratively improve your results reconsidering previous steps 
+  5. **Prediction** of variable of interest $Y$ considering variables $X$, $Z$ and $W$.
+      +	Select (with justifications) different prediction models
+      +	Make predictions
+      +	Evaluate the performance of each model. 
+      +	Compare the different approaches
+  6. **Explaination** the relationships between the variable of interest and the explanatory variables you have identified
+      +	*Discuss* the statistical significance (or equivalent notion) of the link between variables)
+      +	*Interpret* the link between variables in terms of mobility behaviors and analysis
+      + *Conclude* on the assumptions you have drawn in the **point 3.**
+
+You will produce a **10 pages maximum report** (eventually with few appendices) dealing with the following points (you will discuss them relatively to your topic):
+
+For each point, specify if applicable if you worked on a subset of observations and / or if you deleted or created variables.
+
+In addition, do not hesitate to collaborate with your comrades working on other variables, the issues being linked and the results of some can also be exploited by others.
+
+The body of the report should be a synthesis of your analyzes, where you present the elements that you think are the most important. Concrete elements (values, tables, figures) should support your assertions, but do not give all the details of your analyzes in the body of the report (the appendices are made for this). For example, if you want to study the correlations of variables, indicate only the most significant in the report, and refer to the appendices for the complete matrix of correlations.
+
+The report must be produced in Rmarkdown (or KnitR) format with all the elements allowing to **reproduce** your analysis. Your files (potentially zip archive) will be uploaded on Caseine and returned by email (iragael.joly@grenoble-inp.fr) on **`r duedate`** at 11:59 p.m. last deadline.
+
+It is **imperative to ensure the reproducibility** of your work, both in the handling of the data and in the production of the report. So be sure to tell the user which packages to install, which intermediate files to run, etc.
+
+***
+
+\newpage
+
+# Database description - mobility survey
+## Files list:
+
+- Databases `allgre.PB_V2`
+- Variables Dictionary **DICO_VAR_EMD_GRE2010_v22.xls**
+- File **SABD_Project_MOBILITY_Part1_2023.Rmd** of this statement. This `Rmd` file  creates files to be used in the project. It is advised to execute this file to initiate data handling and operations.
+- GIS files: They are grouped in the folder: `FOND_MAP`
+- GIS code are described in the variables dictionary
+
+
+## Topics and Data
+
+Data are an extraction from mobility survey in Grenoble in 2010. 
+
+Those data are available in R format: `allgre.PB_V2.Rdata`. 
+
+Access to suitable MongoDB collection format which will be open during the first lesson on MongoDB. MongoDB collection will give you efficient access to the data and their organisation.
+
+The R `allgre.PB_V2.Rdata` dataframe is needed today to start the project and reproduce this statement file. You will replace this file by the equivalent MongoDB collection.
+ 
+ 
+ 
+The data describe the trips made by members of Grenoble households in 2010 (@Cerema2013). They provide data relating to individual and household characteristics (household structure, motorization, sex, age, professional status, etc.) and mobility practices (numbers of trips, travel times, locations of trips, modes used, reasons for trips, etc.).
+
+The structure of the database is described in the following sections.
+
+***
+
+\newpage
+
+# List of proposed topics
+
+### 1. Daily travel times
+
+Analyze the **daily travel times** (variable BTT [^1]). Tips: The literature has used the DTT to define *extreme commuters*: people traveling more than 2 hours per day.
+
+[^1]: French for TTB: Travel Time Budget is the sum of duration of all trips performed in a day by the individual
+
+- Variable of interest $Y$: **btt** - Travel Time Budget
+- Variable $X$: **jourdepl** - day of the trip
+- Variable $Z$: **permis**  - driving licence holder
+- Specific focus $W$:  influence of **housing** on your decision variable $Y$
+
+### 2. Mode of transport choice
+
+Analyze the 'car' choice of the mode of travel of individuals and identify the determinants of this choice among the individual or household characteristics and modes of transport.
+
+- Variable of interest $Y$: **Voiture** (variable to be created according to `mode_depl_ag = 'VP'` or not)
+- Variable $X$: **permis**  - driving licence holder
+- Variable $Z$: **age** - age
+- Specific focus $W$:  influence of **family structure** on your decision variable $Y$ 
+
+### 3. Mobility behavior
+
+Propose a characterization of the population of mobile and immobile people and identify the determinants of mobility
+
+- Variable of interest $Y$: **immobil** (variable to be created according to `nbd = 0` or `nbd > 0` - `nbd` is the number of trips)
+- Variable $X$: **age** - age
+- Variable $Z$: **VP_DISPO** - number of available cars in the household
+- Specific focus $W$:  influence of **car ownership ** on your decision variable $Y$ 
+
+### 4. Household motorization
+
+What are the determinants of household motorization?
+
+- Variable of interest $Y$: **motorisation** (variable to be created according to `VP_DISPO = 0` or `VP_DISPO> 0` - `VP_DISPO` is the number of available cars in household)
+- Variable $X$: **taillemng** - household size
+- Variable $Z$: **Permis_mng**: at least 1 driving licence in the household
+- Specific focus $W$:  influence of **sociodemographic household  ** on your decision variable $Y$ 
+
+###  5. Engine Types
+
+Study the Grenoble car fleet. What are the determinants of choosing a diesel engine?
+The question can focus on the 1st vehicle of the household.
+
+- Variable of interest $Y$: **diesel** (variable to be created according to `ENERGIE1 = 3` or `ENERGIE1 <> 3` - `ENERGIE1`is the type of engine of the 1rst car of the household)
+- Variable $X$: **TYPE_HAB** - type of housing
+- Variable $Z$: **taillemng** - household size
+- Specific focus $W$:  influence of **occupation** on your decision variable $Y$ 
+
+### 6. Frequence of use of urban public transport
+
+Study the factors associated with frequent (daily) use of urban public transport (`freqtcu`)
+
+- Variable of interest $Y$: **freqtcu** (variable to be created according to `freqtcu = 1` or not)
+- Variable $X$: **permis**  - driving licence holder
+- Variable $Z$: **taillemng**  - household size
+- Specific focus $W$:  influence of **car ownership ** on your decision variable $Y$ 
+
+### 7. Trips during rush hours
+
+Study the factors associated with time of a trip during the rush hours (daily) (`heuredep` and `mindep`)
+
+- Variable of interest $Y$: **`heuredep` and `mindep`**
+- Variable $X$: **motifor** - trip purpose at origin
+- Variable $Z$: **D12** - traveled distance (distance as the crow flies)
+- Specific focus $W$:  influence of **household mobility equipment ** on your decision variable $Y$ 
+
+### 8. Traveled distance
+
+Study the factors associated with traveled distance
+
+- Variable of interest $Y$: **`D13`**
+- Variable $X$: **motifor** - trip purpose at origin
+- Variable $Z$: **TYPE_HAB** - type of housing
+- Specific focus $W$:  influence of **mobility accessibility and speed** on your decision variable $Y$ 
+
+
+***
+
+\newpage
+
+
+Data operations are in two parts.
+
+1. First part describes data preprocessing (off the project) that were performed to create the dataframe. It shows you the operation, the scripts applied before the exercise. *You can not run these instructions*
+1. Second part describes processing (on the projet) that are to be performed to manage the data for the project. *You have to run these operations* and eventualy modify them.
+
+
+## Part One - Preprocessing
+
+### Database loading and exploration
+
+```{r, eval=FALSE}
+library(tidyverse)
+```
+
+#### Data loading
+
+This section describes former data manipulation that lead to the actual database.
+
+The data are extract of half of the real household in the survey
+
+```{r initial_load, echo=TRUE, eval=FALSE}
+#  echo=TRUE, eval=FALSE
+# Loading of the original database
+load("allgre_TR.RData")
+# Extracting half of the household for confidentiality issue
+set.seed(123)
+allgre$PB <- round( ave(  sample( x= c(0,1), prob= c(0.5, 0.5), size =
+         length(allgre$id_men),replace=T) , allgre$id_men, FUN= mean) )
+table(allgre$PB)
+allgre.PB <- allgre[allgre$PB ==1,]
+# Saving
+# Exclusion of non interesting variables
+allgre.PB_V2 <- allgre.PB[, -c( 5 ,10 ,47 ,49 ,51 ,64 ,81 ,97 ,98 ,101 ,124:136, 139:148, 150, 151)]
+save(allgre.PB_V2, file = "allgre.PB_V2.RData")
+```
+
+## Part Two - Processing introduction
+
+Here starts the real data work
+
++ Here we load the actual database
++ We built some count table to check the correct loading of the data
++ We built ID variable: `id_depl` to point each unique trip. `id_depl` is composed of the individual ID concatenated with the trip number
+
+
+```{r echo=TRUE, eval=T}
+#  echo=TRUE, eval=FALSE
+# Loading of the resulting DF
+load("allgre.PB_V2.RData")
+table(allgre.PB_V2$nbd)
+# Check of NO_DEPL - number of trips
+table(allgre.PB_V2$NO_DEPL)
+# Check of id_depl - id of trips
+table(is.na(allgre.PB_V2$id_depl))
+# Creation of new id_depl
+allgre.PB_V2$id_depl <- allgre.PB_V2$id_pers * 10  + allgre.PB_V2$NO_DEPL 
+table(is.na(allgre.PB_V2$id_depl))
+table(allgre.PB_V2$nbd)
+```
+
+
+### Description of the database content
+
+We handle the variables names to built a 7 columns table containing all variables names and the list and details of each variables in the data.
+
+```{r}
+Ncol <- 7; 
+v <- Ncol* (Nlin <-  ceiling(length(names(allgre.PB_V2))/Ncol )) - length(names(allgre.PB_V2))
+mat <- matrix(c(names(allgre.PB_V2), rep("",v)), ncol = Ncol, 
+              dimnames = list(1:Nlin,c("col1", "col2", "col3", "col4", "col5", "col6", "col7"))
+              )
+# content
+knitr::kable( mat, digits = 2, caption = "Table: Variable names in *allgre.PB*")
+
+```
+
+
+
+## Variables Description and labels
+
+See variables dictionary (file: **`DICO_VAR_EMD_GRE2010_v22.xls`**)
+
+Here follows the column number, the variable name and the variable description
+
+| Col # | Var name |  Description  |
+|:-----|:-----------|:----------------------------|
+| `r kt = 1; kt` | `r names (allgre.PB_V2) [kt] ` | Drawing number of the observation (often close to the residence zone number)  |
+| `r kt = kt + 1;kt` |  `r names (allgre.PB_V2) [kt] ` | Household number |
+| `r kt = kt + 1;kt`  |  `r names (allgre.PB_V2) [kt] `| Number of the person in the household  |
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] `| Number of the person's trip  |
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] `|  Number of the area of residence (see correspondence file)| 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] `|  Day of the move  
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] `|  Type of residence of the household  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] `|  Type of occupation of the person  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] `|  Department number of the reference sncf station  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] `|  Postal code of the reference sncf station  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] `|  Availability of a telephone  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] `|  Present in the telephon directory  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] `|  Availability of an internet connection  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] `|  Number of private car available in the household  | 
+| `r kt = kt + 1; kt` | `r  names (allgre.PB_V2) [kt] ` | Type of car for the 1st car of the household | | `r kt = kt + 1; kt`  | `r  names (allgre.PB_V2) [kt] ` | Fuel type of the 1st car in the household  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Year of entry into service of the 1st househol car  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Power of the 1st car in the household  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Type of ownership of the 1st car in the household  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Parking place of the 1st car of the household  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Type of parking for the 1st car of the household  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [seq (kt, kt + 20,1)] ` |   |
+|                      |                         | idem for cars n ° 2, 3 and 4 of the household  | 
+| `r kt = kt + 21; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Number of bikes in the household  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Number of 2 motorized wheels in the household  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  adjustment coefficient associated with the household  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Residence zone number  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Gender  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Link with the household reference person  | | `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Age  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Possession of a cell phone  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Possession of an email address  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Possession of driving license  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Last school attended  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Main occupation |  
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Other occupation |
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Socio-professional category (PCS)  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Possession of a Public Transport subscription in general  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Validity of the TC subscription yesterday  | 
+| `r kt = kt + 1; kt` | `r  names (allgre.PB_V2) [kt] ` | Work or home study|  
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Zone of the place of work or study (Main occupation)  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Arrangement of a car in general (Travel home-work or study)  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Parking problems in general (at work or study)  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Parking difficulties at work or study place  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Frequency of bicycle use  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Frequency of use 2 wheels with motors (type 1)  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Frequency of use 2 wheels with motors (type 2)  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Frequency of use Car with driver  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Frequency of use Car as a passenger  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Frequency of use Urban network tag  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Tramway use frequency only  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Frequency of use Other urban network  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Frequency of use of the Cars Transisère network  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` | TER use frequency | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Situation of the person the day before  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Number of the area of residence  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Purpose at the origin  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Purpose for the origin of the accompanied person  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Number of the area origin of the displacement  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Start time (hour)|
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Start minute |  
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Purpose at destination  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Purpose at destination of the accompanied person | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Number of stops in the trip |    
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Destination area number  | 
+| `r kt = kt + 1; kt` | `r  names (allgre.PB_V2) [kt] ` |  Arrival time (hour)|
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Arrival minute |  
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  trip duration   (declared)  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Number of mechanized mode of transport used in the trip | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Transport cost are covered  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  traveled distance (distance as the crow flies)  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` | traveled distance | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  number of the residential area (should be the same as  `zoneres.x.1`)   | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  number of the element in the trip  | 
+| `r kt = kt + 1; kt` | `r  names (allgre.PB_V2) [kt] ` | Walk time at origin |
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Transport mode |  
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Area at origin of a stop |  
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Area at destination of a stop  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Walk time at destination |   
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Number of the vehicle  | 
+| `r kt = kt + 1; kt`  |  `r names (allgre.PB_V2) [kt] ` | Number of occupant |
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Parking place |   
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Type of parking place  | 
+| `r kt = kt + 1; kt`  | `r  names (allgre.PB_V2) [kt] ` | Parking duration  | 
+| `r kt = kt + 1; kt`  | `r  names (allgre.PB_V2) [kt] ` | Use of the highway |
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Public transport pass holder  | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Household id |   
+| `r kt = kt + 1; kt`  |  `r names (allgre.PB_V2) [kt] ` |  Person id |  
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Trips id |   
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Stop id  | 
+| `r kt = kt + 1; kt`  | `r  names (allgre.PB_V2) [kt] ` |  Number of persons | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Number of trips |
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Number of stops |  
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Daily travel time | | `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  transport mode  version 2    | 
+| `r kt = kt + 1; kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Transport cost estimation  | 
+| `r kt = kt + 1;kt`  |  `r  names (allgre.PB_V2) [kt] ` |  Transport mode aggregated version | 
+
+\newpage
+
+## Data Base Structure 
+
+This is a so-called 'hierarchical' database. It initially consists of 4 files:
+
+1. File *Household*
+1. File *Person*
+1. File *Trip*
+1. File *Route*
+
+In surveys, trips are made up of a series of trips or stages made for a certain reason. For a trip, there may be several routes described, when the trip is made in several stages (for example: a bicycle trip from home to the station, a train trip, then a bicycle trip from the station instead of job). This is represented in the database provided by several lines for the same trip.
+
+On the same hierarchical principle: an individual can make several trips during the day, and a household can be made up of several individuals.
+
+The database provided is the 'finest', since it describes all the household, individual and travel information for each trip. There are therefore as many lines as there are trips.
+
+The structure is managed by the identifying numbers of households, individuals, trips and route:
+
+- `id_men`: Unique Household identifier
+- `id_pers`: Unique identifier Person
+- `id_depl`: Unique identifier Displacement
+- `id_traj`: Unique identifier of the route
+
+The work requested in this project may require work, for example on an individual basis instead of trips. For this, it will be necessary to reduce the database (reduce the number of lines) to keep only information at the individual level (one line per individual).
+
+Definitely MongoDB format will help understanding the data organisation and make your data treatment easier and more efficient
+
+***
+
+Statement for the first class:
+
++ Your first step in this project is to be able to reproduce the statement in pdf format kniting the Rmd file
++ This implies
+   * to organize your working directories (in your OS)
+   * to organize your files (in your OS and report paths in Rmd files)
+   * to install all needed libraries in R (RStudio - specifically `knitr` and  `tinytex`)
+   * to explore the Rmd file chunck by chunck to ensure everything is ok
+   * to knit the Rmd in pdf / solve the bugs
+   * to enjoy your first reproducible pdf document
+
+\newpage
+
+# References
+
+<div id="refs"></div>
+
