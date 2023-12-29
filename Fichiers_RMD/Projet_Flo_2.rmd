@@ -1,0 +1,29 @@
+---
+title: "**Facteurs influençants la prise des transports en commun**"
+author: "RACHIDI Mustapha & \n SAUNIER Florent & \n SAADALLAH Malek"
+date : "**Janvier 2023**"
+output : pdf_document
+
+---
+
+\newpage 
+
+**Introduction**
+
+  Ce projet se base sur des données récoltées en 2010 dans la région Grenobloise. L'étude a pour but de déterminer les facteurs influençants la prise des transports en commun . Pour cela nous nous sommes pris comme limites : le réseau Mtag qui comprend les bus qualifiés de "ville" (Nous n'avons pas pris en compte les bus régionaux comme par exemple le bus Grenoble - Chamrousse) et le réseau du trammway dont les lignes depuis 2010 ont été augmentées.
+
+
+**Articles de la littérature**
+
+
+**Familiarisation avec la base de données**
+
+```{r, include =FALSE}
+
+library(dplyr)
+load("allgre.PB_V2.RData")
+DB_projet_full<-allgre.PB_V2
+
+#pacmann::
+```
+
