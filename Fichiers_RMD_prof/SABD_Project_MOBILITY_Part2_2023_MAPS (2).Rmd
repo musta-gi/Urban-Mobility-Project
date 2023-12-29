@@ -1,0 +1,120 @@
+---
+title: "SABD Project: Urban Mobility Analysis"
+subtitle: "Part 2 - Data Handling with R and MongoDB"
+author: "I. Joly, C Bobineau, B. Agard"
+date: "juin 2022"
+output: pdf_document
+header-includes:
+  \renewcommand{\contentsname}{Table of Content}
+  \usepackage{tcolorbox}
+  \newtcolorbox{blackbox}{
+  colback=black,
+  colframe=orange,
+  coltext=white,
+  boxsep=5pt,
+  arc=4pt}
+toc: true
+theme: unitedtlm
+link-citations: yes
+biblio-style: apalike
+bibliography: ["biblio/Project_biblio.bib"]
+nocite: |
+  @xie2015, @Chang2013, @xie2016, @Munzner2015, @harrell2013regression
+---
+
+<!-- Installation Instructions  -->
+```{r , eval=F, echo=FALSE}
+# This Rmd document is in the main folder
+# Project should habe subfolder : "biblio" with "Project_biblio.bib" file
+# data file "allgre.PB_V2.RData" is in the main 
+# The FOND_MAP folder contain all the NewESRI.* files
+#    They are usefull to test GIS representation
+```
+
+```{r definitions, echo=FALSE, results='hide'}
+duedate <- "20/01/2023"
+
+# In the Part2_GIS.Rmd file you will find the  Parameter map_draw  to turn TRUE to draw maps (or FALSE)
+```
+
+
+
+
+```{r setup, include=FALSE, cache=FALSE}
+## Libraries
+## You may have to install these libraries first 
+## with the tab on bottom right panel : "Packages" ; click install
+## or : install.packages("ggplot2")   - don't forget the ""
+library(tidyverse)
+library(knitr)
+library(ggplot2)
+library(skimr)
+#install.packages("Mongolite")
+library(mongolite)
+
+## Global options
+knitr::opts_chunk$set(               # Here we define behaviours of the code chunks in the Rmd
+               echo=T,        # to display in the generated document code lines (False to hide them; but they will be ran)
+               eval=FALSE,     # to run the chunks
+	             message=FALSE, # to hide in the document R messages while running chuncks
+               warning=FALSE) # to hide in the document R alerts
+knitr::opts_knit$set(width=75)  
+options(max.print="75")       # to define max number of elements (lines) displayed by R when running an instruction
+```
+
+
+# Statement
+
+## Objectives of the Part 2
+
+Part 1 ends with saving the data. You should know how to create the reproducible document, load and save the data for the Mobility project.
+
+Part 2 aims at guiding you to handle the data: select the variables, modify and create variables, either with R or Mongo or both.
+
+First, the document presents several operations applied to the variables, to create new ones, factorize some, etc.
+
+This part ends with some operations in the objective to create GIS map based on the data: display a map of Grenoble metropolitan area with color indicating some variables values (average daily travel time and number of trip)
+
+You will continue with data handling for your own topic.
+
+First lets load the data
+
+```{r eval=TRUE}
+load("allgre.PB_V2.RData")
+```
+
+<!-- Variable handling with R   -->
+```{r eval=TRUE, child='Part2_Variables.Rmd'}
+```
+
+\newpage
+
+<!---   You will find in this child Rmd document the parameter: map_draw to turn TRUE or FALSE -->
+
+<!-- GIS Variable handling with R   -->
+```{r eval=TRUE, child='Part2_GIS_2023.Rmd'}
+```
+
+
+
+
+
+\newpage
+
+# References
+
+<div id="refs"></div>
+
+
+
+## Sources
+
+(https://www.mongodb.com/languages/mongodb-and-r-example)
+
+(https://rtavenar.github.io/mongo_book/content/07_scripts_R.html)
+
+(https://jeroen.github.io/mongolite/query-data.html#sort-and-limit)
+
+\newpage
+
+# Appendix
