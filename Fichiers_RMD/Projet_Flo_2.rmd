@@ -19,11 +19,63 @@ output : pdf_document
 **Familiarisation avec la base de données**
 
 ```{r, include =FALSE}
-
+pacman::p_load(naniar)
 library(dplyr)
 load("allgre.PB_V2.RData")
 DB_projet_full<-allgre.PB_V2
 
+dim(DB_projet_full) #nombre de lignes et de colonnes de la base de données 
 #pacmann::
+glimpse(DB_projet_full)  #a
+sum(is.na(DB_projet_full)) 
+
+pct_complete(DB_projet_full) #
+pct_miss(DB_projet_full) 
+
+pct_complete_var(DB_projet_full) #% de colonnes complètes ~21% 
+pct_complete_case(DB_projet_full) # % de lignes complètes 0%
+
+
+#summary(DB_projet_full) Le summary n'a pas de sens avec autant de colonnes 
+```
+La base de données contient 30 702 lignes et 116 colonnes ce qui correspond à nos variables , on peut la qualifier de base de données "moyenne" mais qui saura nous occuper. 
+Concernant le nombre de valeurs manquantes, toutes variables confondues nous avons 971 658 valeurs manquantes soit 27.3% de notre base de données. 
+De plus, 0% des lignes ont toutes leurs valeurs et c'est 21% des colonnes qui n'ont pas de valeurs manquantes. 
+Il peut être intéressant de voir où sont les valeurs manquantes. 
+```{r}
+
+
+```
+
+```{r, include=FALSE}
+library(ggplot2)
+library(naniar)
+dim(DB_projet_full)[1]
+sapply(DB_projet_full,function(x) (sum(is.na(x))/30702)*100)
+
+
+#gg_miss_var(DB_projet_full[,c(1:6)])
+
+#gg_miss_var(DB_projet_full,show_pct=TRUE)
+#gg_miss_var(DB_projet_full,Gare2,show_pct = TRUE)
+#print(test)
+#miss_var_summary(DB_projet_full,order=FALSE,add_cumsum = TRUE)
+
+#hist(Count_NA_VAR)
+
+
+```
+*Visualisation valeurs manquantes*
+```{r}
+data_2<-DB_projet_full[,c(22:30)]
+vis_miss(
+  data_2,
+  cluster = FALSE,
+  sort_miss = FALSE,
+  show_perc = TRUE,
+  show_perc_col = TRUE,
+  large_data_size = 9e+05,
+  warn_large_data = TRUE
+)
 ```
 
