@@ -1,0 +1,33 @@
+---
+title: "Project_mogo_db"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+install.packages("mongolite")
+library(mongolite)
+```
+```{r}
+myURL <- 'mongodb://SABD_TEST:SABD_TEST@mongodb.ensimag.fr:27017/SABD_TEST' 
+Restaurants = mongo(
+         collection = "restaurants",
+         db = "SABD_TEST",
+         url = myURL
+)
+
+```
+
+```{r}
+allRestaurants<-Restaurants$find()
+```
+
+```{r}
+data_base<-allgre.PB_V2
+
+data_base
+```
+
