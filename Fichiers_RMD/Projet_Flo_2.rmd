@@ -65,8 +65,41 @@ sapply(DB_projet_full,function(x) (sum(is.na(x))/30702)*100)
 
 
 ```
-*Visualisation valeurs manquantes*
+*Visualisation valeurs manquantes* titre à changer peut ête 
+
+En annexe, quelques graphiques permettant de visualiser quelles variables ont le plus de valeurs manquantes. 
+Ces graphiques nous permettrons d'adopter un regard critique sur les variables que nous choisirons par la suite. 
+Cependant, on peut établir quelques critères avec r : ration de valeurs manquantes dans la colonne. 
+
+Bon : r<=5% 
+Moyen : 5%<r<=20% 
+Mauvais 20%<r<=45% 
+Très mauvais : r>45%
+
+Plusieurs variables ont entre 80% 99% de valeurs manquantes 
+
+
+
+## Préparation de la base de données
 ```{r}
+sample <- sample(c(TRUE,FALSE),size=nrow(DB_projet_full),replace=TRUE,prob=c(0.7,0.3))
+DB_reduced <-DB_projet_full[!sample,] #base de donnée test , plus petite pour faire des opérations dessus 
+
+DB_reduced<-DB_reduced%>%mutate(freqtcu=ifelse(freqtcu<=3,1,0)) #On simplifie notre variable explicative en disant que ceux qui l"utilise tous les jours (freqtcu=1) , 2 fois par semaine minimum ( freqtcu=2) et 2 fois par mois minimum ( freqtcu=3)
+ 
+
+
+
+```
+**Variables du projet**
+
+
+\newpage
+
+**Annexes**
+
+
+```{r, include =FALSE}
 data_2<-DB_projet_full[,c(22:30)]
 vis_miss(
   data_2,
@@ -74,8 +107,41 @@ vis_miss(
   sort_miss = FALSE,
   show_perc = TRUE,
   show_perc_col = TRUE,
-  large_data_size = 9e+05,
+  large_data_size = 9e+06,
+  warn_large_data = TRUE
+)
+```
+```{r, include=TRUE}
+data_2<-DB_projet_full[,c(30:44)]
+vis_miss(
+  data_2,
+  cluster = FALSE,
+  sort_miss = FALSE,
+  show_perc = TRUE,
+  show_perc_col = TRUE,
+  large_data_size = 9e+06,
   warn_large_data = TRUE
 )
 ```
 
+*Listes variables à plus de 80% de valeurs manquantes*
+
+-motoracc
+-situveil
+-STAT_TRAV
+-TYPE_STAT4
+-LIEU_STAT4
+-POSSES4
+-PUIS_VP4
+-AN_VP4
+-ENERGIE4
+-GENRE4
+-TYPE_STAT3
+-LIEU_STAT3
+-POSSES3
+-PUIS_VP3
+-AN_VP3
+-ENERGIE3
+-motdeacc
+-nbarret
+-abonpeage
