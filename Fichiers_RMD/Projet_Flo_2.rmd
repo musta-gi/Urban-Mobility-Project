@@ -10,7 +10,8 @@ output : pdf_document
 
 **Introduction**
 
-  Ce projet se base sur des données récoltées en 2010 dans la région Grenobloise. L'étude a pour but de déterminer les facteurs influençants la prise des transports en commun . Pour cela nous nous sommes pris comme limites : le réseau Mtag qui comprend les bus qualifiés de "ville" (Nous n'avons pas pris en compte les bus régionaux comme par exemple le bus Grenoble - Chamrousse) et le réseau du trammway dont les lignes depuis 2010 ont été augmentées.
+  Ce projet se base sur des données récoltées en 2010 dans la région Grenobloise. L'étude a pour but de déterminer les facteurs influençants la prise des transports en commun . Pour cela nous nous sommes pris comme limites : le réseau Mtag qui comprend les bus qualifiés de "ville" (Nous n'avons pas pris en compte les bus régionaux comme par exemple le bus Grenoble - Chamrousse) et le réseau du trammway dont les lignes depuis 2010 ont été augmentées.\newline
+
 
 
 **Articles de la littérature**
@@ -41,7 +42,8 @@ pct_complete_case(DB_projet_full) # % de lignes complètes 0%
 La base de données contient 30 702 lignes et 116 colonnes ce qui correspond à nos variables , on peut la qualifier de base de données "moyenne" mais qui saura nous occuper. 
 Concernant le nombre de valeurs manquantes, toutes variables confondues nous avons 971 658 valeurs manquantes soit 27.3% de notre base de données. 
 De plus, 0% des lignes ont toutes leurs valeurs et c'est 21% des colonnes qui n'ont pas de valeurs manquantes. 
-Il peut être intéressant de voir où sont les valeurs manquantes. 
+Il peut être intéressant de voir où sont les valeurs manquantes.\newline
+L'échantillon comporte 5189 personnes 
 ```{r}
 
 
@@ -82,17 +84,62 @@ Plusieurs variables ont entre 80% 99% de valeurs manquantes
 
 ## Préparation de la base de données
 ```{r}
+library(dplyr)
+#Code de test à éliminer par la suite 
+set.seed(1) # Cela fige 
+
 sample <- sample(c(TRUE,FALSE),size=nrow(DB_projet_full),replace=TRUE,prob=c(0.7,0.3))
-DB_reduced <-DB_projet_full[!sample,] #base de donnée test , plus petite pour faire des opérations dessus 
+DB_reduced <-DB_projet_full[!sample,] #base de donnée test , plus petite pour faire des opérations dessus (j'ai pris 30%)
 
 DB_reduced<-DB_reduced%>%mutate(freqtcu=ifelse(freqtcu<=3,1,0)) #On simplifie notre variable explicative en disant que ceux qui l"utilise tous les jours (freqtcu=1) , 2 fois par semaine minimum ( freqtcu=2) et 2 fois par mois minimum ( freqtcu=3)
- 
+
+DB_reduced$freqtcu<-factor(DB_reduced$freqtcu) #transformation de la variable Y en facteur pour ensuite l'utiliser dans un modèle 
+
+#str(DB_reduced[,c(67:70)])
+
+DB_reduced<-rename(DB_reduced,"tailmng"="NO_PERS")
+
+#DB_reduced_2<-DB_reduced[!duplicated(DB_reduced$id_pers),]  #5249 gens recencés dans le sondage mais on a besoin des infos relatives aux trajets justement donc  
+
+
+#Permis 
+
+DB_reduced<-DB_reduced%>%mutate(permis=ifelse(permis==1 | permis==3,"YES","NO")) #On dit que ceux qui passent le permis vont avoir le permis
+
+#Car ownership 
+
 
 
 
 ```
 **Variables du projet**
 
+**frecqtcu** : Variable d'intérêt (Y) catégorielle qui indique la fréquence d'utilisation des transports en communs chez une personne.\newline Elle prend les valeurs  :
+
+1 : Utilisation des transports en commun tous les jours \newline
+2 : Utilisation des transports en commun au moins deux fois par semaine \newline
+3 : Utilisation des transports en commun au moins deux fois par mois \newline
+4: Utilisation des transports en commun très rare \newline
+5 : Utilisation des transports en commun inexistante \newline
+```{r} 
+#code de création de la variable frecqtcu , juste reprendre ce qui a été dit en haut 
+```
+
+**tailmng** : Variable qui indique le nombre de personnes composant le ménage.
+```{r}
+#code création de tailmng
+
+```
+**permis**
+```{r}
+#Code création de permis
+
+```
+**Car ownership**
+
+```{r}
+#Création de car ownership 
+```
 
 \newpage
 
