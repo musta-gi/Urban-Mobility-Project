@@ -107,7 +107,10 @@ DB_reduced<-rename(DB_reduced,"tailmng"="NO_PERS")
 DB_reduced<-DB_reduced%>%mutate(permis=ifelse(permis==1 | permis==3,"YES","NO")) #On dit que ceux qui passent le permis vont avoir le permis
 
 #Car ownership 
-
+DB_reduced$car_ownership<-c(1:nrow(DB_reduced))
+DB_reduced$car_ownership<-DB_reduced%>%
+  mutate(car_ownership=ifelse(DB_reduced$VP_DISPO>=1 & (DB_reduced$GENRE1==1 | DB_reduced$GENRE2==1 | DB_reduced$GENRE3==1 | DB_reduced$GENRE4==1) & (DB_reduced$POSSES1==1 | DB_reduced$POSSES2==1 | DB_reduced$POSSES3==1 | DB_reduced$POSSES4==1 ),"OUI","NON"))
+                                                                              
 
 
 
