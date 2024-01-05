@@ -1,10 +1,14 @@
 ---
-title: "**Facteurs influençants la prise des transports en commun**"
+title: "**Facteurs influençants la prise des transports en commun pour l'agglomération grenobloise**"
 author: "RACHIDI Mustapha & \n SAUNIER Florent & \n SAADALLAH Malek"
 date : "**Janvier 2023**"
 output : pdf_document
 
 ---
+```{r, include-FALSE} 
+#J'ai tenté l'image 
+knitr::include_graphics("Image_BUS_TRAM.jpg")
+```
 
 \newpage 
 
@@ -14,10 +18,11 @@ output : pdf_document
 
 
 
+
 **Articles de la littérature**
 
 
-**Familiarisation avec la base de données**
+## Familiarisation avec la base de données
 
 ```{r, include =FALSE}
 pacman::p_load(naniar)
@@ -67,7 +72,7 @@ sapply(DB_projet_full,function(x) (sum(is.na(x))/30702)*100)
 
 
 ```
-*Visualisation valeurs manquantes* titre à changer peut ête 
+**Visualisation valeurs manquantes** titre à changer peut ête 
 
 En annexe, quelques graphiques permettant de visualiser quelles variables ont le plus de valeurs manquantes. 
 Ces graphiques nous permettrons d'adopter un regard critique sur les variables que nous choisirons par la suite. 
@@ -82,8 +87,7 @@ Plusieurs variables ont entre 80% 99% de valeurs manquantes
 
 
 
-## Préparation de la base de données
-```{r}
+```{r, include=FALSE}
 library(dplyr)
 #Code de test à éliminer par la suite 
 set.seed(1) # Cela fige 
@@ -107,46 +111,185 @@ DB_reduced<-rename(DB_reduced,"tailmng"="NO_PERS")
 DB_reduced<-DB_reduced%>%mutate(permis=ifelse(permis==1 | permis==3,"YES","NO")) #On dit que ceux qui passent le permis vont avoir le permis
 
 #Car ownership 
-DB_reduced$car_ownership<-c(1:nrow(DB_reduced))
-DB_reduced$car_ownership<-DB_reduced%>%
-  mutate(car_ownership=ifelse(DB_reduced$VP_DISPO>=1 & (DB_reduced$GENRE1==1 | DB_reduced$GENRE2==1 | DB_reduced$GENRE3==1 | DB_reduced$GENRE4==1) & (DB_reduced$POSSES1==1 | DB_reduced$POSSES2==1 | DB_reduced$POSSES3==1 | DB_reduced$POSSES4==1 ),"OUI","NON"))
+DB_reduced$car_ownership<-c(1:nrow(DB_reduced)) # création de la variable 
+#DB_reduced$car_ownership<-DB_reduced%>%
+  #mutate(car_ownership=ifelse(DB_reduced$VP_DISPO>=1 & (DB_reduced$GENRE1==1 | DB_reduced$GENRE2==1 | DB_reduced$GENRE3==1 | #DB_reduced$GENRE4==1) & (DB_reduced$POSSES1==1 | DB_reduced$POSSES2==1 | DB_reduced$POSSES3==1 | DB_reduced$POSSES4==1 ),"OUI","NON"))
                                                                               
+DB_reduced<-DB_reduced%>%mutate(car_ownership=ifelse(DB_reduced$VP_DISPO>0 & (DB_reduced$GENRE1!=2 | DB_reduced$GENRE2!=2 | DB_reduced$GENRE3!=2 | DB_reduced$GENRE4!=2) & (DB_reduced$POSSES1==1 | DB_reduced$POSSES2==1 | DB_reduced$POSSES3==1 | DB_reduced$POSSES4==1),"OUI","NON"))
 
-
-
+DB_reduced$car_ownership<-factor(DB_reduced$car_ownership)
+str(DB_reduced[,c(116,117)])
 ```
-**Variables du projet**
+## Variables du projet
 
-**frecqtcu** : Variable d'intérêt (Y) catégorielle qui indique la fréquence d'utilisation des transports en communs chez une personne.\newline Elle prend les valeurs  :
+**Frecqtcu** : Variable d'intérêt (Y) catégorielle qui indique la fréquence d'utilisation des transports en communs chez une personne.\newline Elle prend les valeurs  :
 
 1 : Utilisation des transports en commun tous les jours \newline
 2 : Utilisation des transports en commun au moins deux fois par semaine \newline
 3 : Utilisation des transports en commun au moins deux fois par mois \newline
 4: Utilisation des transports en commun très rare \newline
 5 : Utilisation des transports en commun inexistante \newline
+
+Nous avons décidié de construire frecqtcu de manière à ce qu'elle prenne la valeur 0 ou 1 
 ```{r} 
-#code de création de la variable frecqtcu , juste reprendre ce qui a été dit en haut 
-```
+ DB_projet_full<-DB_projet_full%>%mutate(freqtcu=ifelse(freqtcu<=3,1,0))
+DB_projet_full$freqtcu<-factor(DB_projet_full$freqtcu)
 
-**tailmng** : Variable qui indique le nombre de personnes composant le ménage.
+```
+Pour toutes les personnes qui prennent les transports de manière : régulière/tous les jours , au moins deux fois par semaine et au moins deux fois par mois se sont vues attribuées la valeur 1 car le "au moins" présage une prise des transports en communs plus élevée. \newline
+
+**Tailmng** : Variable qui indique le nombre de personnes composant le ménage.
 ```{r}
-#code création de tailmng
+DB_projet_full<-rename(DB_projet_full,"tailmng"="NO_PERS")
 
 ```
-**permis**
+On change simplement le nom de la variable "NO_PERS" qui indique le nombre de personne dans le ménage\newline
+**Permis** :Variable indiquant si la personne effectuant le trajet   possède le permis ou pas.
 ```{r}
-#Code création de permis
+DB_projet_full<-DB_projet_full%>%mutate(permis=ifelse(any(permis==1 | permis==3),"YES","NO"))
+DB_projet_full$permis<-factor(DB_projet_full$permis)
 
 ```
-**Car ownership**
+
+**Car_ownership** : Variable indiquant si la personne effectuant le trajet possède une voiture
 
 ```{r}
-#Création de car ownership 
+DB_projet_full<-DB_projet_full%>%mutate(car_ownership=ifelse(DB_projet_full$VP_DISPO>0 & (DB_projet_full$GENRE1!=2 | DB_projet_full$GENRE2!=2 | DB_projet_full$GENRE3!=2 | DB_projet_full$GENRE4!=2) & (DB_projet_full$POSSES1==1 | DB_projet_full$POSSES2==1 | DB_projet_full$POSSES3==1 | DB_projet_full$POSSES4==1),"OUI","NON"))
+
+DB_projet_full$car_ownership<-factor(DB_projet_full$car_ownership)
 ```
+Cette variable dépent de trois variables qui sont VP_dispo qui doit être strictement supérieur à 0, puis GENRE (type de véhicule utilisé) , nous avons exclu les campings cars car notre sujet se prête au milieu urbain et de POSSE (Est ce que la voiture appartient à la personne).Nous nous sommes contentés de prendre exclusivement les véhicules possedés par la personne.\newline 
+
+## Création de la nouvelle base de données
+
+**Variables complémentaires**\newline
+Grâce aux variables précédentes et aux articles que l'on a trouvé dans la littérature, nous allons construire notre base de données  pour notre modèle.\newline
+Nous exploiterons un ensemble de caractéristiques socio-économiques puis certaines variables liées au "confort" du trajet.
+
+
+```{r, include=FALSE}
+# Variables liées au confort 
+Variables_supp<-c(1,7,8,20,21,47,49,54,55,57,59,62,63,87,88,89,112,113) #c'est là qu'on va ajouter nos variables 
+str(DB_reduced[,Variables_supp])
+
+New_DB<-cbind(DB_reduced[,Variables_supp],DB_reduced$freqtcu,DB_reduced$permis,DB_reduced$tailmng,DB_reduced$car_ownership) #création de la nouvelles bases de données 
+
+New_DB<-rename(New_DB,"freqtcu"="DB_reduced$freqtcu")
+New_DB<-rename(New_DB,"permis"="DB_reduced$permis")
+New_DB<-rename(New_DB,"tailmng"="DB_reduced$tailmng")
+New_DB<-rename(New_DB,"car_ownership"="DB_reduced$car_ownership")
+New_DB<-rename(New_DB,"PBM_STAT_GENERAL"="PBM_STAT")
+```
+
+```{r,include=FALSE}
+New_DB$TYPE_HAB<-replace(New_DB$TYPE_HAB,New_DB$TYPE_HAB==1,"INDIVIDUEL_ISO")
+New_DB$TYPE_HAB<-replace(New_DB$TYPE_HAB,New_DB$TYPE_HAB==2,"INDIVIDUEL_COLE")
+New_DB$TYPE_HAB<-replace(New_DB$TYPE_HAB,New_DB$TYPE_HAB==3,"PETIT_COLLECTIF")
+New_DB$TYPE_HAB<-replace(New_DB$TYPE_HAB,New_DB$TYPE_HAB==4,"GRAND_COLLECTIF")
+New_DB$TYPE_HAB<-replace(New_DB$TYPE_HAB,New_DB$TYPE_HAB==5,"AUTRE")
+New_DB$TYPE_HAB<-factor(New_DB$TYPE_HAB)
+
+
+New_DB$TYPE_OCU<-replace(New_DB$TYPE_OCU,New_DB$TYPE_OCU==1,"PROPRIETAIRE")
+New_DB$TYPE_OCU<-replace(New_DB$TYPE_OCU,New_DB$TYPE_OCU==2,"LOCATAIRE_HLM")
+New_DB$TYPE_OCU<-replace(New_DB$TYPE_OCU,New_DB$TYPE_OCU==3,"AUTRE_LOCATAIRE")
+New_DB$TYPE_OCU<-replace(New_DB$TYPE_OCU,New_DB$TYPE_OCU==4,"LOGE_GRATUIT")
+New_DB$TYPE_OCU<-replace(New_DB$TYPE_OCU,New_DB$TYPE_OCU==5,"AUTRE")
+New_DB$TYPE_OCU<-factor(New_DB$TYPE_OCU)
+
+New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==1,"GARAGE/BOX")
+New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==2,"RUE")
+New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==3,"PARKING PUBLIC")
+New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==4,"PARKING PRIVÉ")
+New_DB$LIEU_STAT1<-factor(New_DB$LIEU_STAT1)
+
+New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==1,"INTERDIT")
+New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==2,"GRATUIT")
+New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==3,"PAYANT")
+New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==4,"PAYÉ_TIERCE")
+New_DB$TYPE_STAT1<-factor(New_DB$TYPE_STAT1)
+
+
+New_DB$ABO_TC<-replace(New_DB$ABO_TC,New_DB$ABO_TC==1,"OUI_GRATUIT")
+New_DB$ABO_TC<-replace(New_DB$ABO_TC,New_DB$ABO_TC==2,"OUI_PAYANT")
+New_DB$ABO_TC<-replace(New_DB$ABO_TC,New_DB$ABO_TC==3,"NON")
+New_DB$ABO_TC<-factor(New_DB$ABO_TC)
+
+New_DB$travdom<-replace(New_DB$travdom,New_DB$travdom==1,"OUI")
+New_DB$travdom<-replace(New_DB$travdom,New_DB$travdom==2,"NON")
+New_DB$travdom<-factor(New_DB$travdom)
+
+New_DB$PBM_STAT_GENERAL<-replace(New_DB$PBM_STAT_GENERAL,New_DB$PBM_STAT_GENERAL==1,"OUI")
+New_DB$PBM_STAT_GENERAL<-replace(New_DB$PBM_STAT_GENERAL,New_DB$PBM_STAT_GENERAL>=2,"NON")
+New_DB$PBM_STAT_GENERAL<-factor(New_DB$PBM_STAT_GENERAL)
+
+New_DB$STAT_TRAV<-replace(New_DB$STAT_TRAV,New_DB$STAT_TRAV==1,"OUI")
+New_DB$STAT_TRAV<-replace(New_DB$STAT_TRAV,New_DB$STAT_TRAV>=2,"NON")
+New_DB$STAT_TRAV<-factor(New_DB$STAT_TRAV)
+
+New_DB$prisecharge<-replace(New_DB$prisecharge,New_DB$prisecharge>=1,"NON")
+New_DB$prisecharge<-replace(New_DB$prisecharge,New_DB$prisecharge==3,"NON")
+New_DB$prisecharge<-factor(New_DB$prisecharge)
+
+
+New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 1, "TravaiPleinT")
+New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 2, "TravailPartT")
+New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 3, "Appreti_Stage")
+New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 4, "Etudiant")
+New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 7, "Retraite")
+New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 5, "Scolaire")
+New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 6, "Chomeur")
+New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 8, "Reste_auFoyer")
+New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 9, "Autre")
+New_DB$OCCU1=factor(New_DB$OCCU1)
+
+
+New_DB$OCCU2 <- replace(New_DB$OCCU2, New_DB$OCCU2 == 0, "NON_Con")
+New_DB$OCCU2 <- replace(New_DB$OCCU2, New_DB$OCCU2 == 1, "Travail")
+New_DB$OCCU2 <- replace(New_DB$OCCU2, New_DB$OCCU2 == 2, "Etudes")
+New_DB$OCCU2=factor(New_DB$OCCU2)
+
+
+#New_DB$sexew-replace(New_DB$sexe,New_DB$sexe==1,"Homme")
+#New_DB$sexew-replace(New_DB$sexe,New_DB$sexe==2,"Femme")
+#New_DB$sexe<-factor(New_DB$sexe)
+
+
+
+
+
+
+
+
+
+```
+**Restriction géographique**
+Définissons ce que l'on entend par "transports en communs".\newline
+Pour notre étude nous nous concentrons sur les transports en communs de la société MTag,c'est à dire les tram et bus du réseau.\newline
+Notre délimitation géographique sera simplement les terminaux des différentes lignes de tram/bus confondues.\newline
+Par la suite, quand on parlera de transports en communs, on se refère à la définition au dessus.  
+
+```{r}
+Vec_zone<-c(101,102,103,104,105,106,107,108,109,110,111,112,113,114,117,118,135,119,120,136,121,122,123,124,125,126,137,138,127,128,129,130,131,132,115,140,116,134,141,142,143,302)
+
+```
+Toutes les zones répertoriées dans le vecteur "Vec_zone" ont au moins un arrêt du réseau Mtag.
+
+```{r}
+New_DB<-dplyr::filter(New_DB,tir %in% Vec_zone) #on garde que les zones où il y a des transports en communs 
+```
+**Restriction sur l'âge**\newline
+
+Il est nécessaire de préciser que les mineurs se déplacent majoritairement via les transports en communs car ils n'ont tout simplement pas le choix...\newline
+Pour ne pas être biaisé, il est judicieux de filtrer les mineurs de notre base de données ainsi que les personnes âgées de plus de 80ans. 
+```{r}
+New_DB<-dplyr::filter(New_DB,age>=18 & age<=80)
+```
+
+
 
 \newpage
-
-**Annexes**
+## Annexes
 
 
 ```{r, include =FALSE}
