@@ -172,12 +172,12 @@ Nous exploiterons un ensemble de caractéristiques socio-économiques puis certa
 Variables_supp<-c(1,7,8,20,21,47,49,54,55,57,59,62,63,87,88,89,112,113) #c'est là qu'on va ajouter nos variables 
 str(DB_reduced[,Variables_supp])
 
-New_DB<-cbind(DB_reduced[,Variables_supp],DB_reduced$freqtcu,DB_reduced$permis,DB_reduced$tailmng,DB_reduced$car_ownership) #création de la nouvelles bases de données 
+New_DB<-cbind(DB_projet_full[,Variables_supp],DB_projet_full$freqtcu,DB_projet_full$permis,DB_projet_full$tailmng,DB_projet_full$car_ownership) #création de la nouvelles bases de données 
 
-New_DB<-rename(New_DB,"freqtcu"="DB_reduced$freqtcu")
-New_DB<-rename(New_DB,"permis"="DB_reduced$permis")
-New_DB<-rename(New_DB,"tailmng"="DB_reduced$tailmng")
-New_DB<-rename(New_DB,"car_ownership"="DB_reduced$car_ownership")
+New_DB<-rename(New_DB,"freqtcu"="DB_projet_full$freqtcu")
+New_DB<-rename(New_DB,"permis"="DB_projet_full$permis")
+New_DB<-rename(New_DB,"tailmng"="DB_projet_full$tailmng")
+New_DB<-rename(New_DB,"car_ownership"="DB_projet_full$car_ownership")
 New_DB<-rename(New_DB,"PBM_STAT_GENERAL"="PBM_STAT")
 ```
 
@@ -250,9 +250,9 @@ New_DB$OCCU2 <- replace(New_DB$OCCU2, New_DB$OCCU2 == 2, "Etudes")
 New_DB$OCCU2=factor(New_DB$OCCU2)
 
 
-#New_DB$sexew-replace(New_DB$sexe,New_DB$sexe==1,"Homme")
-#New_DB$sexew-replace(New_DB$sexe,New_DB$sexe==2,"Femme")
-#New_DB$sexe<-factor(New_DB$sexe)
+New_DB$sexe<-replace(New_DB$sexe,New_DB$sexe==1,"Homme")
+New_DB$sexe<-replace(New_DB$sexe,New_DB$sexe==2,"Femme")
+New_DB$sexe<-factor(New_DB$sexe)
 
 
 
@@ -285,8 +285,20 @@ Pour ne pas être biaisé, il est judicieux de filtrer les mineurs de notre base
 ```{r}
 New_DB<-dplyr::filter(New_DB,age>=18 & age<=80)
 ```
+Notre nouvelle base de données comprend maintenant 10 879 observations et 22 variables
+## Analyse Univariée\newline
 
+**Analyse Univariée**
 
+```{r}
+summary(New_DB$freqtcu)
+counts<-table(New_DB$freqtcu)
+(counts/nrow(New_DB))*100
+
+#percentage
+```
+Dans notre base de données, il y a 46% des gens qui prennent les transports en communs de manière plus ou moins régulière. 
+**Analyse Bivariée**
 
 \newpage
 ## Annexes
