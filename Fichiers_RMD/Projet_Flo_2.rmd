@@ -83,7 +83,7 @@ Moyen : 5%<r<=20%
 Mauvais 20%<r<=45% 
 Très mauvais : r>45%
 
-Plusieurs variables ont entre 80% 99% de valeurs manquantes 
+Plusieurs variables ont entre 80% 99% de valeurs manquantes JAI TROUVÉ PQ c'est jusque que beaucoup de gens n'ont tout simplement pas plus de 1 véhicule, ce qui fait que les variables correspondantes sont vides. À CHANGER 
 
 
 
@@ -169,7 +169,7 @@ Nous exploiterons un ensemble de caractéristiques socio-économiques puis certa
 
 ```{r, include=FALSE}
 # Variables liées au confort 
-Variables_supp<-c(1,7,8,20,21,47,49,54,55,57,59,62,63,87,88,89,112,113) #c'est là qu'on va ajouter nos variables 
+Variables_supp<-c(1,2,7,8,20,21,47,49,54,55,57,59,62,63,87,88,89,107,108,112,113) #c'est là qu'on va ajouter nos variables 
 str(DB_reduced[,Variables_supp])
 
 New_DB<-cbind(DB_projet_full[,Variables_supp],DB_projet_full$freqtcu,DB_projet_full$permis,DB_projet_full$tailmng,DB_projet_full$car_ownership) #création de la nouvelles bases de données 
@@ -179,6 +179,7 @@ New_DB<-rename(New_DB,"permis"="DB_projet_full$permis")
 New_DB<-rename(New_DB,"tailmng"="DB_projet_full$tailmng")
 New_DB<-rename(New_DB,"car_ownership"="DB_projet_full$car_ownership")
 New_DB<-rename(New_DB,"PBM_STAT_GENERAL"="PBM_STAT")
+
 ```
 
 ```{r,include=FALSE}
@@ -269,36 +270,97 @@ Pour notre étude nous nous concentrons sur les transports en communs de la soci
 Notre délimitation géographique sera simplement les terminaux des différentes lignes de tram/bus confondues.\newline
 Par la suite, quand on parlera de transports en communs, on se refère à la définition au dessus.  
 
-```{r}
+```{r,include=FALSE}
 Vec_zone<-c(101,102,103,104,105,106,107,108,109,110,111,112,113,114,117,118,135,119,120,136,121,122,123,124,125,126,137,138,127,128,129,130,131,132,115,140,116,134,141,142,143,302)
 
 ```
 Toutes les zones répertoriées dans le vecteur "Vec_zone" ont au moins un arrêt du réseau Mtag.
 
-```{r}
+```{r,include=FALSE}
 New_DB<-dplyr::filter(New_DB,tir %in% Vec_zone) #on garde que les zones où il y a des transports en communs 
 ```
 **Restriction sur l'âge**\newline
 
 Il est nécessaire de préciser que les mineurs se déplacent majoritairement via les transports en communs car ils n'ont tout simplement pas le choix...\newline
 Pour ne pas être biaisé, il est judicieux de filtrer les mineurs de notre base de données ainsi que les personnes âgées de plus de 80ans. 
-```{r}
-New_DB<-dplyr::filter(New_DB,age>=18 & age<=80)
+```{r,include=FALSE}
+New_DB_filtered<-dplyr::filter(New_DB,age>=18 & age<=80)
+
+New_DB_filtered<-rename(New_DB_filtered,"num_menage"="NO_MEN")
 ```
 Notre nouvelle base de données comprend maintenant 10 879 observations et 22 variables
 ## Analyse Univariée\newline
 
-**Analyse Univariée**
+**Analyse Univariée : freqtcu**
 
-```{r}
-summary(New_DB$freqtcu)
-counts<-table(New_DB$freqtcu)
+```{r,include=FALSE}
+summary(New_DB_filtered$freqtcu)
+counts<-table(New_DB_filtered$freqtcu)
 (counts/nrow(New_DB))*100
 
-#percentage
+barplot(table(New_DB$freqtcu))
+title("Proportion de gens prenant les transports en communs")
 ```
-Dans notre base de données, il y a 46% des gens qui prennent les transports en communs de manière plus ou moins régulière. 
+Dans notre base de données, il y a 46% des gens qui prennent les transports en communs de manière plus ou moins régulière.\newline
+**Analyse Univariée :permis**
+```{r, include=FALSE}
+summary(New_DB$permis)
+barplot(table(New_DB$permis))
+```
+Toutes les personnes de notre échantillonnage possède le permis de conduire.\newline
+**Analyse Univariée : tailmng**
+```{r,include=FALSE}
+summary(New_DB_filtered$tailmng)
+#IQR(New_DB_filtered$tailmng)
+table(New_DB_filtered$tailmng)
+barplot(table(New_DB_filtered$tailmng))
+title("Répartition du nombre de personnes par foyer")
+
+
+hist(table(New_DB_filtered$tailmng))
+```
+Pour ce qu'il en est de tailmng, la moyenne étant plus élevée que la médiane nous avons une asymétrie du côté droit , c'est à dire qu'il y a une concentration plus importante de valeurs à gauche de la moyenne.\newline
+
+**Analyse Univariée : car_ownership**
+
+```{r,include=FALSE}
+summary(New_DB_filtered$car_ownership)
+table(New_DB_filtered$car_ownership)
+barplot(table(New_DB_filtered$car_ownership))
+
+(table(New_DB_filtered$car_ownership)/nrow(New_DB_filtered))*100
+
+```
+84.4% des gens qui ont le permis sont propriétaires d'un véhicule dans notre étude.\newline Pas de conclusions hâtives, cela sera explicité dans l'analyse bivariée.  
+
 **Analyse Bivariée**
+
+Pour cette partie, nous allons faire appel à plusieurs tests statistiques pour tenter de comprendre les relations qu'il peut y avoir entre nos varialbes.\newline
+Le test statistique du Chi^2 est utile pour établir ou non une relation  entre deux variables qualitatives.\newline
+Tandis que le test statistique d
+```{r}
+DB_var_zg<-New_DB_filtered[!duplicated(New_DB_filtered$id_pers),]
+```
+**Création des variables pour l'analyse bivariée**
+```{r} 
+
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Plus_jeune=sum(min(age))) #variable plus jeune de la région
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_actif=sum(OCCU1=="TravailPleinT" | OCCU1=="TravailPartT")) #Nb_actif
+DB_var_zg<-DB_var_zg
+```
+
+```{r}
+##Permis 
+table(New_DB_filtered$freqtcu,New_DB_filtered$permis)
+chisq.test(table(New_DB_filtered$freqtcu,New_DB_filtered$permis))
+
+#cor.test(table(New_DB_filtered$freqtcu,New_DB_filtered$permis))
+
+```
+```{r}
+talbe(New_DB_filtered$freqtcu,New_DB_filtered$tailmng)
+
+```
 
 \newpage
 ## Annexes
