@@ -343,10 +343,22 @@ DB_var_zg<-New_DB_filtered[!duplicated(New_DB_filtered$id_pers),]
 ```
 **Création des variables pour l'analyse bivariée**
 ```{r} 
-
+#DB_var_zg : zone grenoble 
 DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Plus_jeune=sum(min(age))) #variable plus jeune de la région
 DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_actif=sum(OCCU1=="TravailPleinT" | OCCU1=="TravailPartT")) #Nb_actif
-DB_var_zg<-DB_var_zg
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_inactif=sum(OCCU1=="Chomeur" | OCCU1=="Reste_auFoyer" | OCCU1=="Autre")) #Nb_inactif
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_retraites=sum(OCCU1=="Retraite")) #Nb_retraités
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_etu=sum(OCCU1=="Scolaire" | OCCU1=="Etudiant" | OCCU1=="Appreti_Stage")) #Nb_etudiants
+
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_log_collec=sum(TYPE_HAB=="GRAND_COLLECTIF" | TYPE_HAB=="PETIT_COLLECTIF"))  #NB_log_collectif
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_log_indiv=sum(TYPE_HAB=="INDIVIDUEL_ISO" | TYPE_HAB=="INDIVIDUEL_COL")) #Nb_log_indiv
+
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_proprietaire=sum(TYPE_OCU=="PROPRIETAIRE" | TYPE_OCU=="LOGE_GRATUIT")) #Nb_proprietaire
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_locataire=sum(TYPE_OCU=="LOCATAIRE" | TYPE_OCU=="AUTRE_LOCATAIRE")) #Nb_locataire
+
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_parking=sum(any(LIEU_STAT1=="PARKING PUBLIC" | LIEU_STAT1=="PARKING PRIVÉ")))
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_garage=sum(any(LIEU_STAT1=="GARAGE/BOX")))
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_rue=sum(any(LIEU_STAT1=="RUE")))
 ```
 
 ```{r}
