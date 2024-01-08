@@ -169,7 +169,7 @@ Nous exploiterons un ensemble de caractéristiques socio-économiques puis certa
 
 ```{r, include=FALSE}
 # Variables liées au confort 
-Variables_supp<-c(1,2,7,8,20,21,47,49,54,55,57,59,62,63,87,88,89,107,108,112,113) #c'est là qu'on va ajouter nos variables 
+Variables_supp<-c(1,2,7,8,20,21,47,49,54,55,56,57,59,62,63,87,88,89,107,108,112,113) #c'est là qu'on va ajouter nos variables 
 str(DB_reduced[,Variables_supp])
 
 New_DB<-cbind(DB_projet_full[,Variables_supp],DB_projet_full$freqtcu,DB_projet_full$permis,DB_projet_full$tailmng,DB_projet_full$car_ownership) #création de la nouvelles bases de données 
@@ -198,16 +198,22 @@ New_DB$TYPE_OCU<-replace(New_DB$TYPE_OCU,New_DB$TYPE_OCU==4,"LOGE_GRATUIT")
 New_DB$TYPE_OCU<-replace(New_DB$TYPE_OCU,New_DB$TYPE_OCU==5,"AUTRE")
 New_DB$TYPE_OCU<-factor(New_DB$TYPE_OCU)
 
+New_DB<-New_DB%>%mutate(LIEU_STAT1=ifelse(is.na(LIEU_STAT1),0,LIEU_STAT1))
 New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==1,"GARAGE/BOX")
 New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==2,"RUE")
 New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==3,"PARKING PUBLIC")
 New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==4,"PARKING PRIVÉ")
+New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==5,"NON") #traitement des valeurs manquantes 
 New_DB$LIEU_STAT1<-factor(New_DB$LIEU_STAT1)
 
+New_DB<-New_DB%>%mutate(TYPE_STAT1=ifelse(is.na(TYPE_STAT1),0,TYPE_STAT1))
 New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==1,"INTERDIT")
 New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==2,"GRATUIT")
 New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==3,"PAYANT")
 New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==4,"PAYÉ_TIERCE")
+New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==5,"NON") #traitement des valeurs manquantes on aura besoin de ça après 
+
+
 New_DB$TYPE_STAT1<-factor(New_DB$TYPE_STAT1)
 
 
@@ -356,9 +362,29 @@ DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_log_indiv=sum(TYPE_HAB=="INDIVI
 DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_proprietaire=sum(TYPE_OCU=="PROPRIETAIRE" | TYPE_OCU=="LOGE_GRATUIT")) #Nb_proprietaire
 DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_locataire=sum(TYPE_OCU=="LOCATAIRE" | TYPE_OCU=="AUTRE_LOCATAIRE")) #Nb_locataire
 
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_parking=sum(any(LIEU_STAT1=="PARKING PUBLIC" | LIEU_STAT1=="PARKING PRIVÉ")))
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_garage=sum(any(LIEU_STAT1=="GARAGE/BOX")))
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_rue=sum(any(LIEU_STAT1=="RUE")))
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_parking=sum(LIEU_STAT1=="PARKING PUBLIC" | LIEU_STAT1=="PARKING PRIVÉ"))
+#DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_garage=sum(LIEU_STAT1=="GARAGE/BOX"))
+#DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_rue=sum(LIEU_STAT1=="RUE"))
+
+
+```
+
+```{r}
+
+
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_parking=sum(LIEU_STAT1=="PARKING PUBLIC" | LIEU_STAT1=="PARKING PRIVÉ"))
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_garage=sum(LIEU_STAT1=="GARAGE/BOX"))
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_rue=sum(LIEU_STAT1=="RUE"))
+
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_interdit=sum(TYPE_STAT1=="INTERDIT"))
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_gratuit=sum(TYPE_STAT1=="GRATUIT" | TYPE_STAT1=="PAYÉ_TIERCE"))
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_payant=sum(TYPE_STAT1=="PAYANT"))
+
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Haut_stat_social=sum(csp ==21 | csp==22 | csp==23 |csp==31 | csp==32 | csp==36 | csp==41 | csp==46 | csp==51 | csp==54 | csp==55)) #critères subjectifs à revoir les professions qu'on considère "hautes" 
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Bas_stat_social=sum(csp==10 | csp==47 | csp==48 |csp==56 | csp==66 | csp==69 |csp==81 | csp==82))
+
+
+
 ```
 
 ```{r}
@@ -370,7 +396,9 @@ chisq.test(table(New_DB_filtered$freqtcu,New_DB_filtered$permis))
 
 ```
 ```{r}
-talbe(New_DB_filtered$freqtcu,New_DB_filtered$tailmng)
+table(New_DB_filtered$freqtcu,New_DB_filtered$tailmng)
+t.test(table(New_DB_filtered$freqtcu,New_DB_filtered$tailmng)
+)
 
 ```
 
