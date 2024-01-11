@@ -5,11 +5,14 @@ author: "RACHIDI Mustapha & \n SAUNIER Florent & \n SAADALLAH Malek"
 date: '**Janvier 2023**'
 output:
   html_document:
-    df_print: paged
+    css: header.css
+    includes:
+      in_header: header.html
+  pdf_document: default
 ---
 ```{r, include-FALSE} 
 #J'ai tenté l'image 
-knitr::include_graphics("Image_BUS_TRAM.jpg")
+#knitr::include_graphics("Image_BUS_TRAM.jpg")
 ```
 
 \newpage 
@@ -48,32 +51,12 @@ pct_complete_case(DB_projet_full) # % de lignes complètes 0%
 #summary(DB_projet_full) Le summary n'a pas de sens avec autant de colonnes 
 ```
 
-```{python}
-# test avec python
-import pandas as pd
-import numpy as np
-import rpy2.robjects as ro
-from rpy2.robjects import pandas2ri
-
-pandas2ri.activate()
-ro.r['load']('allgre.PB_V2.RData')
-r_dataframe = ro.r['allgre.PB_V2']
-# Convert the R DataFrame into a Pandas DataFrame
-df = pandas2ri.ri2py(r_dataframe)
-
-# Now 'df' is a Pandas DataFrame
-print(df.head())
-```
-
 La base de données contient 30 702 lignes et 116 colonnes ce qui correspond à nos variables , on peut la qualifier de base de données "moyenne" mais qui saura nous occuper. 
 Concernant le nombre de valeurs manquantes, toutes variables confondues nous avons 971 658 valeurs manquantes soit 27.3% de notre base de données. 
 De plus, 0% des lignes ont toutes leurs valeurs et c'est 21% des colonnes qui n'ont pas de valeurs manquantes. 
 Il peut être intéressant de voir où sont les valeurs manquantes.\newline
 L'échantillon comporte 5189 personnes 
-```{r}
 
-
-```
 
 ```{r, include=FALSE}
 library(ggplot2)
@@ -296,10 +279,44 @@ Vec_zone<-c(101,102,103,104,105,106,107,108,109,110,111,112,113,114,117,118,135,
 ```
 Toutes les zones répertoriées dans le vecteur "Vec_zone" ont au moins un arrêt du réseau Mtag.
 
+vérifier notre choix avec un clustering
+
+```{r}
+test <- New_DB %>% mutate(is_in_zones = ifelse(tir %in% Vec_zone, 100, 0))
+library(dbscan)
+a <- nrow(filter(test, is_in_zones == 100))
+b <- nrow(filter(test, is_in_zones == 0))
+print(b)
+print(a)
+test_age_db <- select(test, age, csp)
+summary(test_age_db)
+
+dbscan_age <- dbscan(test_age_db, eps = 0.25, minPts = )
+
+plot(test_age_db, col = dbscan_age$cluster + 1L, main = "DBSCAN Clustering on Age")
+```
+
+
+
 ```{r}
 New_DB<-dplyr::filter(New_DB,tir %in% Vec_zone) #on garde que les zones où il y a des transports en communs 
+head(New_DB)
 ```
 **Restriction sur l'âge**\newline
+
+Faire un dbscan pour choisir les tranches d'âge
+```{r}
+library(dbscan)
+test_age_db <- select(New_DB, age, tir)
+summary(test_age_db)
+
+dbscan_age <- dbscan(test_age_db, eps = 1, minPts = 500)
+
+plot(test_age_db, col = dbscan_age$cluster + 1L, main = "DBSCAN Clustering on Age")
+
+
+```
+
 
 Il est nécessaire de préciser que les mineurs se déplacent majoritairement via les transports en communs car ils n'ont tout simplement pas le choix...\newline
 Pour ne pas être biaisé, il est judicieux de filtrer les mineurs de notre base de données ainsi que les personnes âgées de plus de 80ans. 
