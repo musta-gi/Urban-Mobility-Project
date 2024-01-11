@@ -1,9 +1,11 @@
 ---
-title: "**Facteurs influençants la prise des transports en commun pour l'agglomération grenobloise**"
+title: '**Facteurs influençants la prise des transports en commun pour l''agglomération
+  grenobloise**'
 author: "RACHIDI Mustapha & \n SAUNIER Florent & \n SAADALLAH Malek"
-date : "**Janvier 2023**"
-output : pdf_document
-
+date: '**Janvier 2023**'
+output:
+  html_document:
+    df_print: paged
 ---
 ```{r, include-FALSE} 
 #J'ai tenté l'image 
@@ -20,6 +22,7 @@ knitr::include_graphics("Image_BUS_TRAM.jpg")
 
 
 **Articles de la littérature**
+
 
 
 ## Familiarisation avec la base de données
@@ -44,6 +47,24 @@ pct_complete_case(DB_projet_full) # % de lignes complètes 0%
 
 #summary(DB_projet_full) Le summary n'a pas de sens avec autant de colonnes 
 ```
+
+```{python}
+# test avec python
+import pandas as pd
+import numpy as np
+import rpy2.robjects as ro
+from rpy2.robjects import pandas2ri
+
+pandas2ri.activate()
+ro.r['load']('allgre.PB_V2.RData')
+r_dataframe = ro.r['allgre.PB_V2']
+# Convert the R DataFrame into a Pandas DataFrame
+df = pandas2ri.ri2py(r_dataframe)
+
+# Now 'df' is a Pandas DataFrame
+print(df.head())
+```
+
 La base de données contient 30 702 lignes et 116 colonnes ce qui correspond à nos variables , on peut la qualifier de base de données "moyenne" mais qui saura nous occuper. 
 Concernant le nombre de valeurs manquantes, toutes variables confondues nous avons 971 658 valeurs manquantes soit 27.3% de notre base de données. 
 De plus, 0% des lignes ont toutes leurs valeurs et c'est 21% des colonnes qui n'ont pas de valeurs manquantes. 
