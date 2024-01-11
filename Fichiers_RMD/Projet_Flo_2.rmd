@@ -87,7 +87,7 @@ Moyen : 5%<r<=20%
 Mauvais 20%<r<=45% 
 Très mauvais : r>45%
 
-Plusieurs variables ont entre 80% 99% de valeurs manquantes 
+Plusieurs variables ont entre 80% 99% de valeurs manquantes JAI TROUVÉ PQ c'est jusque que beaucoup de gens n'ont tout simplement pas plus de 1 véhicule, ce qui fait que les variables correspondantes sont vides. À CHANGER 
 
 
 
@@ -115,7 +115,7 @@ DB_reduced<-rename(DB_reduced,"tailmng"="NO_PERS")
 DB_reduced<-DB_reduced%>%mutate(permis=ifelse(permis==1 | permis==3,"YES","NO")) #On dit que ceux qui passent le permis vont avoir le permis
 
 #Car ownership 
-DB_reduced$car_ownership<-c(1:nrow(DB_reduced)) # création de la variable 
+DB_reduced$car_ownership<-c(1:nrow(DB_reduced)) # création de la variable  ### 
 #DB_reduced$car_ownership<-DB_reduced%>%
   #mutate(car_ownership=ifelse(DB_reduced$VP_DISPO>=1 & (DB_reduced$GENRE1==1 | DB_reduced$GENRE2==1 | DB_reduced$GENRE3==1 | #DB_reduced$GENRE4==1) & (DB_reduced$POSSES1==1 | DB_reduced$POSSES2==1 | DB_reduced$POSSES3==1 | DB_reduced$POSSES4==1 ),"OUI","NON"))
                                                                               
@@ -173,7 +173,7 @@ Nous exploiterons un ensemble de caractéristiques socio-économiques puis certa
 
 ```{r, include=FALSE}
 # Variables liées au confort 
-Variables_supp<-c(1,7,8,20,21,47,49,54,55,57,59,62,63,87,88,89,112,113) #c'est là qu'on va ajouter nos variables 
+Variables_supp<-c(1,2,7,8,20,21,47,49,54,55,56,57,59,62,63,87,88,89,107,108,112,113) #c'est là qu'on va ajouter nos variables 
 str(DB_reduced[,Variables_supp])
 
 New_DB<-cbind(DB_projet_full[,Variables_supp],DB_projet_full$freqtcu,DB_projet_full$permis,DB_projet_full$tailmng,DB_projet_full$car_ownership) #création de la nouvelles bases de données 
@@ -183,6 +183,7 @@ New_DB<-rename(New_DB,"permis"="DB_projet_full$permis")
 New_DB<-rename(New_DB,"tailmng"="DB_projet_full$tailmng")
 New_DB<-rename(New_DB,"car_ownership"="DB_projet_full$car_ownership")
 New_DB<-rename(New_DB,"PBM_STAT_GENERAL"="PBM_STAT")
+
 ```
 
 ```{r,include=FALSE}
@@ -201,16 +202,22 @@ New_DB$TYPE_OCU<-replace(New_DB$TYPE_OCU,New_DB$TYPE_OCU==4,"LOGE_GRATUIT")
 New_DB$TYPE_OCU<-replace(New_DB$TYPE_OCU,New_DB$TYPE_OCU==5,"AUTRE")
 New_DB$TYPE_OCU<-factor(New_DB$TYPE_OCU)
 
+New_DB<-New_DB%>%mutate(LIEU_STAT1=ifelse(is.na(LIEU_STAT1),0,LIEU_STAT1))
 New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==1,"GARAGE/BOX")
 New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==2,"RUE")
 New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==3,"PARKING PUBLIC")
 New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==4,"PARKING PRIVÉ")
+New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==5,"NON") #traitement des valeurs manquantes 
 New_DB$LIEU_STAT1<-factor(New_DB$LIEU_STAT1)
 
+New_DB<-New_DB%>%mutate(TYPE_STAT1=ifelse(is.na(TYPE_STAT1),0,TYPE_STAT1))
 New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==1,"INTERDIT")
 New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==2,"GRATUIT")
 New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==3,"PAYANT")
 New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==4,"PAYÉ_TIERCE")
+New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==5,"NON") #traitement des valeurs manquantes on aura besoin de ça après 
+
+
 New_DB$TYPE_STAT1<-factor(New_DB$TYPE_STAT1)
 
 
@@ -273,7 +280,7 @@ Pour notre étude nous nous concentrons sur les transports en communs de la soci
 Notre délimitation géographique sera simplement les terminaux des différentes lignes de tram/bus confondues.\newline
 Par la suite, quand on parlera de transports en communs, on se refère à la définition au dessus.  
 
-```{r}
+```{r,include=FALSE}
 Vec_zone<-c(101,102,103,104,105,106,107,108,109,110,111,112,113,114,117,118,135,119,120,136,121,122,123,124,125,126,137,138,127,128,129,130,131,132,115,140,116,134,141,142,143,302)
 
 ```
@@ -320,23 +327,118 @@ plot(test_age_db, col = dbscan_age$cluster + 1L, main = "DBSCAN Clustering on Ag
 
 Il est nécessaire de préciser que les mineurs se déplacent majoritairement via les transports en communs car ils n'ont tout simplement pas le choix...\newline
 Pour ne pas être biaisé, il est judicieux de filtrer les mineurs de notre base de données ainsi que les personnes âgées de plus de 80ans. 
-```{r}
-New_DB<-dplyr::filter(New_DB,age>=18 & age<=80)
+```{r,include=FALSE}
+New_DB_filtered<-dplyr::filter(New_DB,age>=18 & age<=80)
+
+New_DB_filtered<-rename(New_DB_filtered,"num_menage"="NO_MEN")
 ```
 Notre nouvelle base de données comprend maintenant 10 879 observations et 22 variables
 ## Analyse Univariée\newline
 
-**Analyse Univariée**
+**Analyse Univariée : freqtcu**
 
-```{r}
-summary(New_DB$freqtcu)
-counts<-table(New_DB$freqtcu)
+```{r,include=FALSE}
+summary(New_DB_filtered$freqtcu)
+counts<-table(New_DB_filtered$freqtcu)
 (counts/nrow(New_DB))*100
 
-#percentage
+barplot(table(New_DB$freqtcu))
+title("Proportion de gens prenant les transports en communs")
 ```
-Dans notre base de données, il y a 46% des gens qui prennent les transports en communs de manière plus ou moins régulière. 
+Dans notre base de données, il y a 46% des gens qui prennent les transports en communs de manière plus ou moins régulière.\newline
+**Analyse Univariée :permis**
+```{r, include=FALSE}
+summary(New_DB$permis)
+barplot(table(New_DB$permis))
+```
+Toutes les personnes de notre échantillonnage possède le permis de conduire.\newline
+**Analyse Univariée : tailmng**
+```{r,include=FALSE}
+summary(New_DB_filtered$tailmng)
+#IQR(New_DB_filtered$tailmng)
+table(New_DB_filtered$tailmng)
+barplot(table(New_DB_filtered$tailmng))
+title("Répartition du nombre de personnes par foyer")
+
+
+hist(table(New_DB_filtered$tailmng))
+```
+Pour ce qu'il en est de tailmng, la moyenne étant plus élevée que la médiane nous avons une asymétrie du côté droit , c'est à dire qu'il y a une concentration plus importante de valeurs à gauche de la moyenne.\newline
+
+**Analyse Univariée : car_ownership**
+
+```{r,include=FALSE}
+summary(New_DB_filtered$car_ownership)
+table(New_DB_filtered$car_ownership)
+barplot(table(New_DB_filtered$car_ownership))
+
+(table(New_DB_filtered$car_ownership)/nrow(New_DB_filtered))*100
+
+```
+84.4% des gens qui ont le permis sont propriétaires d'un véhicule dans notre étude.\newline Pas de conclusions hâtives, cela sera explicité dans l'analyse bivariée.  
+
 **Analyse Bivariée**
+
+Pour cette partie, nous allons faire appel à plusieurs tests statistiques pour tenter de comprendre les relations qu'il peut y avoir entre nos varialbes.\newline
+Le test statistique du Chi^2 est utile pour établir ou non une relation  entre deux variables qualitatives.\newline
+Tandis que le test statistique d
+```{r}
+DB_var_zg<-New_DB_filtered[!duplicated(New_DB_filtered$id_pers),]
+```
+**Création des variables pour l'analyse bivariée**
+```{r} 
+#DB_var_zg : zone grenoble 
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Plus_jeune=sum(min(age))) #variable plus jeune de la région
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_actif=sum(OCCU1=="TravailPleinT" | OCCU1=="TravailPartT")) #Nb_actif
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_inactif=sum(OCCU1=="Chomeur" | OCCU1=="Reste_auFoyer" | OCCU1=="Autre")) #Nb_inactif
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_retraites=sum(OCCU1=="Retraite")) #Nb_retraités
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_etu=sum(OCCU1=="Scolaire" | OCCU1=="Etudiant" | OCCU1=="Appreti_Stage")) #Nb_etudiants
+
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_log_collec=sum(TYPE_HAB=="GRAND_COLLECTIF" | TYPE_HAB=="PETIT_COLLECTIF"))  #NB_log_collectif
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_log_indiv=sum(TYPE_HAB=="INDIVIDUEL_ISO" | TYPE_HAB=="INDIVIDUEL_COL")) #Nb_log_indiv
+
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_proprietaire=sum(TYPE_OCU=="PROPRIETAIRE" | TYPE_OCU=="LOGE_GRATUIT")) #Nb_proprietaire
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_locataire=sum(TYPE_OCU=="LOCATAIRE" | TYPE_OCU=="AUTRE_LOCATAIRE")) #Nb_locataire
+
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_parking=sum(LIEU_STAT1=="PARKING PUBLIC" | LIEU_STAT1=="PARKING PRIVÉ"))
+#DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_garage=sum(LIEU_STAT1=="GARAGE/BOX"))
+#DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_rue=sum(LIEU_STAT1=="RUE"))
+
+
+```
+
+```{r}
+
+
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_parking=sum(LIEU_STAT1=="PARKING PUBLIC" | LIEU_STAT1=="PARKING PRIVÉ"))
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_garage=sum(LIEU_STAT1=="GARAGE/BOX"))
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_rue=sum(LIEU_STAT1=="RUE"))
+
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_interdit=sum(TYPE_STAT1=="INTERDIT"))
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_gratuit=sum(TYPE_STAT1=="GRATUIT" | TYPE_STAT1=="PAYÉ_TIERCE"))
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_payant=sum(TYPE_STAT1=="PAYANT"))
+
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Haut_stat_social=sum(csp ==21 | csp==22 | csp==23 |csp==31 | csp==32 | csp==36 | csp==41 | csp==46 | csp==51 | csp==54 | csp==55)) #critères subjectifs à revoir les professions qu'on considère "hautes" 
+DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Bas_stat_social=sum(csp==10 | csp==47 | csp==48 |csp==56 | csp==66 | csp==69 |csp==81 | csp==82))
+
+
+
+```
+
+```{r}
+##Permis 
+table(New_DB_filtered$freqtcu,New_DB_filtered$permis)
+chisq.test(table(New_DB_filtered$freqtcu,New_DB_filtered$permis))
+
+#cor.test(table(New_DB_filtered$freqtcu,New_DB_filtered$permis))
+
+```
+```{r}
+table(New_DB_filtered$freqtcu,New_DB_filtered$tailmng)
+t.test(table(New_DB_filtered$freqtcu,New_DB_filtered$tailmng)
+)
+
+```
 
 \newpage
 ## Annexes
