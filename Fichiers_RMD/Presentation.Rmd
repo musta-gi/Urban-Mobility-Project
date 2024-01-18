@@ -1,36 +1,73 @@
 ---
-title: '**Facteurs influençants la prise des transports en commun pour l''agglomération
-  grenobloise**'
+title: '**Factors impacting the frequency of use of urban public transport in Grenoble**'
 author: "RACHDI Mustapha & \n SAUNIER Florent & \n SAADALLAH Malek"
 date: '**Janvier 2023**'
 output:
-  html_document:
-    css: header.css
-    includes:
-      in_header: header.html
-  pdf_document: default
+  ioslides_presentation:
+    widescreen: true
+    smaller: true
 ---
-```{r, include-FALSE} 
-#J'ai tenté l'image 
-#knitr::include_graphics("Image_BUS_TRAM.jpg")
-```
 
+## Objective
+
+  
+This project is based on data collected in 2010 in the Grenoble region. The study aims to determine the factors influencing the use of public transportation. To do this, we set our limits as follows: the Mtag network, which includes buses classified as "city" buses (we did not take into account regional buses such as the Grenoble - Chamrousse bus), and the tramway network, whose lines have been expanded since 2010.
+
+```{r, echo=FALSE}
+knitr::include_graphics("image_BUS_TRAM.jpg", )
+```
 \newpage 
 
-**Introduction**
+## Methodology
 
-  Ce projet se base sur des données récoltées en 2010 dans la région Grenobloise. L'étude a pour but de déterminer les facteurs influençants la prise des transports en commun . Pour cela nous nous sommes pris comme limites : le réseau Mtag qui comprend les bus qualifiés de "ville" (Nous n'avons pas pris en compte les bus régionaux comme par exemple le bus Grenoble - Chamrousse) et le réseau du trammway dont les lignes depuis 2010 ont été augmentées.\newline
+1- Literature examination
+
+2- Data preparation 
+
+3- Key variables definition
+
+4- Uni-variate Bi-variate analysis
+
+4- The model
+
+
+## State of the art
+
+### Resources
+
+|   # | Authors                                                                                           |   Year | Title                                                                                                                    | Source                                            |
+|----:|:--------------------------------------------------------------------------------------------------|-------:|:-------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------|
+|   1 | Paulley, N., Balcombe, R., Mackett, R., Titheridge, H., Preston, J., Wardman, M., ... & White, P. |   2006 | The demand for public transport: The effects of fares, quality of service, income and car ownership.                     | Transport policy, 13(4), 295-306.                 |
+|   2 | Redman, L., Friman, M., Gärling, T., & Hartig, T.                                                 |   2013 | Quality attributes of public transport that attract car users: A research review.                                        | Transport policy, 25, 119-127.                    |
+|   3 | Zhang, Wang, M., Dong, J., Lu, W., Liu, Y., Ni, A., & Yu, X.                                      |   2022 | Factors and Mechanism Affecting the Attractiveness of Public Transport: Macroscopic and Microscopic Perspectives.        | Journal of Advanced Transportation, 2022, 1–16.   |
+|   4 | Raşca, & Saeed, N.                                                                                |   2022 | Exploring the factors influencing the use of public transport by commuters living in networks of small cities and towns. | Travel, Behaviour & Society, 28, 249–263.         |
+|   5 | Göransson, & Andersson, H.                                                                        |   2023 | Factors that make public transport systems attractive: a review of travel preferences and travel mode choices.           | European Transport Research Review, 15(1), 32–14. |
+
+\newpage
+
+## State of the art
+### Key factors from the literature
+
+* ***Socio-Economic Characteristics:*** Factors like age, income, and individual's financial situation.
+
+* ***Spatial Characteristics:*** The percentage of origin and destination municipalities located in high-density areas.
+
+* ***Journey Characteristics:*** Mode of transport for the reference trip, frequency of the trip, and whether there's an imperative schedule.
+
+* ***General Mobility:*** Access to a car and the frequency of using alternative modes of transport.
+
+* ***Alternative-Specific Variables:*** Time, cost, comfort, and a combination of time and comfort.
+
+* ***Instrumental Motives:*** Objective level of service variables like travel cost, travel time, and frequency of the transport service.
+
+* ***Environmental Concern, Affective, and Symbolic Motives:*** Influence of environmental awareness and positive image promotion on mode choice.
 
 
 
 
-**Articles de la littérature**
+## Database Handling
 
-
-
-## Familiarisation avec la base de données
-
-```{r, include =FALSE}
+```{r, include=FALSE}
 pacman::p_load(naniar)
 library(dplyr)
 load("allgre.PB_V2.RData")
@@ -51,11 +88,14 @@ pct_complete_case(DB_projet_full) # % de lignes complètes 0%
 #summary(DB_projet_full) Le summary n'a pas de sens avec autant de colonnes 
 ```
 
-La base de données contient 30 702 lignes et 116 colonnes ce qui correspond à nos variables , on peut la qualifier de base de données "moyenne" mais qui saura nous occuper. 
-Concernant le nombre de valeurs manquantes, toutes variables confondues nous avons 971 658 valeurs manquantes soit 27.3% de notre base de données. 
-De plus, 0% des lignes ont toutes leurs valeurs et c'est 21% des colonnes qui n'ont pas de valeurs manquantes. 
-Il peut être intéressant de voir où sont les valeurs manquantes.\newline
-L'échantillon comporte 5189 personnes 
+* 30,702 rows
+
+* 116 columns: variables $=> medium-sized$ database
+
+The database contains 30,702 rows and 116 columns, which correspond to our variables. We can classify it as a 'medium-sized' database, but one that will keep us busy. Regarding the number of missing values, considering all variables, we have 971,658 missing values, which is 27.3% of our database. Furthermore, 0% of the rows have all their values, and 21% of the columns have no missing values. It can be interesting to identify where the missing values are located. 
+
+\newline
+The sample includes 5,189 individuals. 
 
 
 ```{r, include=FALSE}
@@ -76,19 +116,36 @@ sapply(DB_projet_full,function(x) (sum(is.na(x))/30702)*100)
 
 
 ```
-**Visualisation valeurs manquantes** titre à changer peut ête 
 
-En annexe, quelques graphiques permettant de visualiser quelles variables ont le plus de valeurs manquantes. 
-Ces graphiques nous permettrons d'adopter un regard critique sur les variables que nous choisirons par la suite. 
-Cependant, on peut établir quelques critères avec r : ration de valeurs manquantes dans la colonne. 
+## Missing values
 
-Bon : r<=5% 
-Moyen : 5%<r<=20% 
-Mauvais 20%<r<=45% 
-Très mauvais : r>45%
 
-Plusieurs variables ont entre 80% 99% de valeurs manquantes JAI TROUVÉ PQ c'est jusque que beaucoup de gens n'ont tout simplement pas plus de 1 véhicule, ce qui fait que les variables correspondantes sont vides. À CHANGER 
+```{r, include=TRUE, echo= FALSE}
+data_2<-DB_projet_full[,c(30:44)]
+vis_miss(
+  data_2,
+  cluster = FALSE,
+  sort_miss = FALSE,
+  show_perc = TRUE,
+  show_perc_col = TRUE,
+  large_data_size = 9e+06,
+  warn_large_data = TRUE
+)
+```
 
+## Missing values
+
+We can establish some criteria with 'r':
+
+Ratio of Missing Values per column = \frac{Number of Missing Values}{Total Number of Values}
+
+* Good: $r \leq  5%$
+
+* Medium: $5% < r \leq 20%$
+
+* Bad: $20% < r \leq 45%$
+
+* Very Bad: $r > 45%$
 
 
 ```{r, include=FALSE}
@@ -124,54 +181,83 @@ DB_reduced<-DB_reduced%>%mutate(car_ownership=ifelse(DB_reduced$VP_DISPO>0 & (DB
 DB_reduced$car_ownership<-factor(DB_reduced$car_ownership)
 str(DB_reduced[,c(116,117)])
 ```
-## Variables du projet
 
-**Frecqtcu** : Variable d'intérêt (Y) catégorielle qui indique la fréquence d'utilisation des transports en communs chez une personne.\newline Elle prend les valeurs  :
+## Project variables.{.build}
 
-1 : Utilisation des transports en commun tous les jours \newline
-2 : Utilisation des transports en commun au moins deux fois par semaine \newline
-3 : Utilisation des transports en commun au moins deux fois par mois \newline
-4: Utilisation des transports en commun très rare \newline
-5 : Utilisation des transports en commun inexistante \newline
+### Frecqtcu
 
-Nous avons décidié de construire frecqtcu de manière à ce qu'elle prenne la valeur 0 ou 1 
-```{r} 
+Categorical variable of interest (Y) indicating the frequency of public transportation usage by an individual.\newline 
+
+It takes the following values:
+\newline
+
+1| Daily use of public transportation. 
+
+2| Use of public transportation at least twice a week. 
+
+3| Use of public transportation at least twice a month. 
+
+4| Very rare use of public transportation. 
+
+5| Non-existent use of public transportation.
+ 
+```{r include=TRUE, echo= FALSE} 
  DB_projet_full<-DB_projet_full%>%mutate(freqtcu=ifelse(freqtcu<=3,1,0))
 DB_projet_full$freqtcu<-factor(DB_projet_full$freqtcu)
 
 ```
-Pour toutes les personnes qui prennent les transports de manière : régulière/tous les jours , au moins deux fois par semaine et au moins deux fois par mois se sont vues attribuées la valeur 1 car le "au moins" présage une prise des transports en communs plus élevée. \newline
 
-**Tailmng** : Variable qui indique le nombre de personnes composant le ménage.
-```{r}
+## Project variables.{.build}
+
+### Tailmng
+
+Variable indicating the number of people in the household.
+```{r include=TRUE, echo= FALSE} 
 DB_projet_full<-rename(DB_projet_full,"tailmng"="NO_PERS")
 
 ```
-On change simplement le nom de la variable "NO_PERS" qui indique le nombre de personne dans le ménage\newline
-**Permis** :Variable indiquant si la personne effectuant le trajet   possède le permis ou pas.
-```{r}
+
+### Permis
+
+Variable indicating if a driving license.
+```{r include=TRUE, echo= FALSE} 
 DB_projet_full<-DB_projet_full%>%mutate(permis=ifelse(any(permis==1 | permis==3),"YES","NO"))
 DB_projet_full$permis<-factor(DB_projet_full$permis)
 
 ```
 
-**Car_ownership** : Variable indiquant si la personne effectuant le trajet possède une voiture
+## Project variables.{.build}
 
-```{r}
+### Car_ownership
+
+Variable indicating whether the person making the journey owns a car.
+
+```{r include=TRUE, echo= FALSE} 
 DB_projet_full<-DB_projet_full%>%mutate(car_ownership=ifelse(DB_projet_full$VP_DISPO>0 & (DB_projet_full$GENRE1!=2 | DB_projet_full$GENRE2!=2 | DB_projet_full$GENRE3!=2 | DB_projet_full$GENRE4!=2) & (DB_projet_full$POSSES1==1 | DB_projet_full$POSSES2==1 | DB_projet_full$POSSES3==1 | DB_projet_full$POSSES4==1),"OUI","NON"))
 
 DB_projet_full$car_ownership<-factor(DB_projet_full$car_ownership)
 ```
-Cette variable dépent de trois variables qui sont VP_dispo qui doit être strictement supérieur à 0, puis GENRE (type de véhicule utilisé) , nous avons exclu les campings cars car notre sujet se prête au milieu urbain et de POSSE (Est ce que la voiture appartient à la personne).Nous nous sommes contentés de prendre exclusivement les véhicules possedés par la personne.\newline 
 
-## Création de la nouvelle base de données
+Depends on three variables: 
 
-**Variables complémentaires**\newline
-Grâce aux variables précédentes et aux articles que l'on a trouvé dans la littérature, nous allons construire notre base de données  pour notre modèle.\newline
-Nous exploiterons un ensemble de caractéristiques socio-économiques puis certaines variables liées au "confort" du trajet.
+1 | VP_dispo
+
+2 | GENRE: type of vehicle used
+
+3 | POSSE: Does the person own the car
+
+## Project variables.{.build}
+
+### Car_ownership
+
+blabla
+
+## Creating the new database
+
+Reducing the size of the initial data base with putting restrictions and removing useless variables.
 
 
-```{r, include=FALSE}
+```{r include=FALSE, echo= FALSE} 
 # Variables liées au confort 
 Variables_supp<-c(1,2,7,8,20,21,47,49,54,55,56,57,59,62,63,87,88,89,107,108,112,113) #c'est là qu'on va ajouter nos variables 
 str(DB_reduced[,Variables_supp])
@@ -186,7 +272,7 @@ New_DB<-rename(New_DB,"PBM_STAT_GENERAL"="PBM_STAT")
 
 ```
 
-```{r,include=FALSE}
+```{r include=FALSE, echo= FALSE} 
 New_DB$TYPE_HAB<-replace(New_DB$TYPE_HAB,New_DB$TYPE_HAB==1,"INDIVIDUEL_ISO")
 New_DB$TYPE_HAB<-replace(New_DB$TYPE_HAB,New_DB$TYPE_HAB==2,"INDIVIDUEL_COLE")
 New_DB$TYPE_HAB<-replace(New_DB$TYPE_HAB,New_DB$TYPE_HAB==3,"PETIT_COLLECTIF")
@@ -274,47 +360,36 @@ New_DB$sexe<-factor(New_DB$sexe)
 
 
 ```
-**Restriction géographique**
-Définissons ce que l'on entend par "transports en communs".\newline
-Pour notre étude nous nous concentrons sur les transports en communs de la société MTag,c'est à dire les tram et bus du réseau.\newline
-Notre délimitation géographique sera simplement les terminaux des différentes lignes de tram/bus confondues.\newline
-Par la suite, quand on parlera de transports en communs, on se refère à la définition au dessus.  
 
-```{r,include=FALSE}
+### Geographical restriction
+
+```{r, echo=FALSE}
+knitr::include_graphics("reseau tag.jpg", )
+```
+
+
+
+
+```{r include=TRUE, echo= FALSE} 
 Vec_zone<-c(101,102,103,104,105,106,107,108,109,110,111,112,113,114,117,118,135,119,120,136,121,122,123,124,125,126,137,138,127,128,129,130,131,132,115,140,116,134,141,142,143,302)
 
 ```
-Toutes les zones répertoriées dans le vecteur "Vec_zone" ont au moins un arrêt du réseau Mtag.
-
-vérifier notre choix avec un clustering
-
-```{r}
-test <- New_DB %>% mutate(is_in_zones = ifelse(tir %in% Vec_zone, 100, 0))
-library(dbscan)
-a <- nrow(filter(test, is_in_zones == 100))
-b <- nrow(filter(test, is_in_zones == 0))
-print(b)
-print(a)
-test_age_db <- test %>% mutate(RSA = ifelse(OCCU1 == "RSA", 0, 100))
-test_age_db <- select(test_age_db, RSA, csp)
-test_age_db <- subset(test_age_db, !is.na(RSA), !is.na(csp))
-summary(test_age_db)
-
-dbscan_age <- dbscan(test_age_db, eps = 5, minPts = 100 )
-
-plot(test_age_db, col = dbscan_age$cluster + 1L, main = "DBSCAN Clustering on Age")
-```
 
 
 
-```{r}
+
+```{r include=FALSE, echo= FALSE} 
 New_DB<-dplyr::filter(New_DB,tir %in% Vec_zone) #on garde que les zones où il y a des transports en communs 
 head(New_DB)
 ```
-**Restriction sur l'âge**\newline
 
-Faire un dbscan pour choisir les tranches d'âge
-```{r}
+## Creating the new database
+
+### Age restriction
+\newline
+
+Removing minors and very old people($> 88$ yo)
+```{r include=TRUE, echo= FALSE} 
 library(dbscan)
 test_age_db <- select(New_DB, age, tir)
 summary(test_age_db)
@@ -327,15 +402,16 @@ plot(test_age_db, col = dbscan_age$cluster + 1L, main = "DBSCAN Clustering on Ag
 ```
 
 
-Il est nécessaire de préciser que les mineurs se déplacent majoritairement via les transports en communs car ils n'ont tout simplement pas le choix...\newline
-Pour ne pas être biaisé, il est judicieux de filtrer les mineurs de notre base de données ainsi que les personnes âgées de plus de 80ans. 
-```{r,include=FALSE}
+```{r include=TRUE, echo= FALSE} 
 New_DB_filtered<-dplyr::filter(New_DB,age>=18 & age<=80)
 
 New_DB_filtered<-rename(New_DB_filtered,"num_menage"="NO_MEN")
 ```
-Notre nouvelle base de données comprend maintenant 10 879 observations et 22 variables
-## Analyse Univariée\newline
+
+
+
+## Univariate Analysis
+
 
 **Analyse Univariée : freqtcu**
 
@@ -355,7 +431,39 @@ barplot(table(New_DB$permis))
 ```
 Toutes les personnes de notre échantillonnage possède le permis de conduire.\newline
 **Analyse Univariée : tailmng**
-```{r,include=FALSE}
+```{r,include=TRUE}
+#summary(New_DB_filtered$tailmng)
+#IQR(New_DB_filtered$tailmng)
+#table(New_DB_filtered$tailmng)
+barplot(table(New_DB_filtered$tailmng))
+title("Répartition du nombre de personnes par foyer")
+
+
+#hist(table(New_DB_filtered$tailmng))
+```
+
+
+
+## Bivariate Analysis
+**Analyse Univariée : freqtcu**
+
+```{r include=TRUE, echo= FALSE} 
+summary(New_DB_filtered$freqtcu)
+counts<-table(New_DB_filtered$freqtcu)
+(counts/nrow(New_DB))*100
+
+barplot(table(New_DB$freqtcu))
+title("Proportion de gens prenant les transports en communs")
+```
+Dans notre base de données, il y a 46% des gens qui prennent les transports en communs de manière plus ou moins régulière.\newline
+**Analyse Univariée :permis**
+```{r include=TRUE, echo= FALSE} 
+summary(New_DB$permis)
+barplot(table(New_DB$permis))
+```
+Toutes les personnes de notre échantillonnage possède le permis de conduire.\newline
+**Analyse Univariée : tailmng**
+```{r include=TRUE, echo= FALSE} 
 summary(New_DB_filtered$tailmng)
 #IQR(New_DB_filtered$tailmng)
 table(New_DB_filtered$tailmng)
@@ -369,7 +477,7 @@ Pour ce qu'il en est de tailmng, la moyenne étant plus élevée que la médiane
 
 **Analyse Univariée : car_ownership**
 
-```{r,include=FALSE}
+```{r include=TRUE, echo= FALSE} 
 summary(New_DB_filtered$car_ownership)
 table(New_DB_filtered$car_ownership)
 barplot(table(New_DB_filtered$car_ownership))
@@ -384,11 +492,11 @@ barplot(table(New_DB_filtered$car_ownership))
 Pour cette partie, nous allons faire appel à plusieurs tests statistiques pour tenter de comprendre les relations qu'il peut y avoir entre nos varialbes.\newline
 Le test statistique du Chi^2 est utile pour établir ou non une relation  entre deux variables qualitatives.\newline
 Tandis que le test statistique d
-```{r}
+```{r include=TRUE, echo= FALSE} 
 DB_var_zg<-New_DB_filtered[!duplicated(New_DB_filtered$id_pers),]
 ```
 **Création des variables pour l'analyse bivariée**
-```{r} 
+```{r include=TRUE, echo= FALSE}  
 #DB_var_zg : zone grenoble 
 DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Plus_jeune=sum(min(age))) #variable plus jeune de la région
 DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_actif=sum(OCCU1=="TravailPleinT" | OCCU1=="TravailPartT")) #Nb_actif
@@ -409,7 +517,8 @@ DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_parking=sum(LIEU_STAT1=="P
 
 ```
 
-```{r}
+
+```{r include=TRUE, echo= FALSE} 
 
 
 DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_parking=sum(LIEU_STAT1=="PARKING PUBLIC" | LIEU_STAT1=="PARKING PRIVÉ"))
@@ -427,7 +536,7 @@ DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Bas_stat_social=sum(csp==10 | csp=
 
 ```
 
-```{r}
+```{r include=TRUE, echo= FALSE} 
 ##Permis 
 table(New_DB_filtered$freqtcu,New_DB_filtered$permis)
 chisq.test(table(New_DB_filtered$freqtcu,New_DB_filtered$permis))
@@ -435,7 +544,7 @@ chisq.test(table(New_DB_filtered$freqtcu,New_DB_filtered$permis))
 #cor.test(table(New_DB_filtered$freqtcu,New_DB_filtered$permis))
 
 ```
-```{r}
+```{r include=TRUE, echo= FALSE} 
 table(New_DB_filtered$freqtcu,New_DB_filtered$tailmng)
 t.test(table(New_DB_filtered$freqtcu,New_DB_filtered$tailmng)
 )
