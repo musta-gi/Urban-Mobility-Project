@@ -85,6 +85,11 @@ Très mauvais : r>45%
 
 Plusieurs variables ont entre 80% 99% de valeurs manquantes JAI TROUVÉ PQ c'est jusque que beaucoup de gens n'ont tout simplement pas plus de 1 véhicule, ce qui fait que les variables correspondantes sont vides. À CHANGER 
 
+```{r}
+sample <- sample(c(TRUE,FALSE),size=nrow(DB_projet_full),replace=TRUE,prob=c(0.7,0.3))
+DB_BBB <-DB_projet_full[!sample,]
+DB_BBB$freqtcu2<-DB_BBB$freqtcu
+```
 
 
 ```{r, include=FALSE}
@@ -94,14 +99,14 @@ set.seed(1) # Cela fige
 
 sample <- sample(c(TRUE,FALSE),size=nrow(DB_projet_full),replace=TRUE,prob=c(0.7,0.3))
 DB_reduced <-DB_projet_full[!sample,] #base de donnée test , plus petite pour faire des opérations dessus (j'ai pris 30%)
-
+DB_reduced$freqtcu2<-DB_reduced$freqtcu
 DB_reduced<-DB_reduced%>%mutate(freqtcu=ifelse(freqtcu<=3,1,0)) #On simplifie notre variable explicative en disant que ceux qui l"utilise tous les jours (freqtcu=1) , 2 fois par semaine minimum ( freqtcu=2) et 2 fois par mois minimum ( freqtcu=3)
-
+#table(DB_reduced$freqtcu)
 DB_reduced$freqtcu<-factor(DB_reduced$freqtcu) #transformation de la variable Y en facteur pour ensuite l'utiliser dans un modèle 
 
 #str(DB_reduced[,c(67:70)])
 
-DB_reduced<-rename(DB_reduced,"tailmng"="NO_PERS")
+#DB_reduced<-rename(DB_reduced,"tailmng"="NO_PERS")
 
 #DB_reduced_2<-DB_reduced[!duplicated(DB_reduced$id_pers),]  #5249 gens recencés dans le sondage mais on a besoin des infos relatives aux trajets justement donc  
 
@@ -132,6 +137,7 @@ str(DB_reduced[,c(116,117)])
 
 Nous avons décidié de construire frecqtcu de manière à ce qu'elle prenne la valeur 0 ou 1 
 ```{r} 
+DB_projet_full$freqtcu2<-DB_projet_full$freqtcu
  DB_projet_full<-DB_projet_full%>%mutate(freqtcu=ifelse(freqtcu<=3,1,0))
 DB_projet_full$freqtcu<-factor(DB_projet_full$freqtcu)
 
@@ -169,7 +175,7 @@ Nous exploiterons un ensemble de caractéristiques socio-économiques puis certa
 
 ```{r, include=FALSE}
 # Variables liées au confort 
-Variables_supp<-c(1,2,7,8,20,21,47,49,54,55,56,57,59,62,63,87,88,89,107,108,112,113) #c'est là qu'on va ajouter nos variables 
+Variables_supp<-c(1,2,7,8,20,21,47,49,54,55,56,57,59,62,63,87,88,89,107,108,112,113,117) #c'est là qu'on va ajouter nos variables 
 str(DB_reduced[,Variables_supp])
 
 New_DB<-cbind(DB_projet_full[,Variables_supp],DB_projet_full$freqtcu,DB_projet_full$permis,DB_projet_full$tailmng,DB_projet_full$car_ownership) #création de la nouvelles bases de données 
@@ -245,7 +251,7 @@ New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 3, "Appreti_Stage")
 New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 4, "Etudiant")
 New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 7, "Retraite")
 New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 5, "Scolaire")
-New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 6, "Chomeur")
+New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 6, "RSA")
 New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 8, "Reste_auFoyer")
 New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 9, "Autre")
 New_DB$OCCU1=factor(New_DB$OCCU1)
@@ -344,8 +350,11 @@ barplot(table(New_DB_filtered$car_ownership))
 Pour cette partie, nous allons faire appel à plusieurs tests statistiques pour tenter de comprendre les relations qu'il peut y avoir entre nos varialbes.\newline
 Le test statistique du Chi^2 est utile pour établir ou non une relation  entre deux variables qualitatives.\newline
 Tandis que le test statistique d
+
 ```{r}
 DB_var_zg<-New_DB_filtered[!duplicated(New_DB_filtered$id_pers),]
+#DB_var_zg<-allgreI faire avec allegreI 
+#DB_var_zg<-New_DB_filtered%>%group_by(tir) faire un group_by tir et trouver des variables relatives au trajet 
 ```
 **Création des variables pour l'analyse bivariée**
 ```{r} 
@@ -387,20 +396,126 @@ DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Bas_stat_social=sum(csp==10 | csp=
 
 ```
 
-```{r}
-##Permis 
-table(New_DB_filtered$freqtcu,New_DB_filtered$permis)
-chisq.test(table(New_DB_filtered$freqtcu,New_DB_filtered$permis))
 
+**Permis** 
+```{r}
+#On va se ref aux fréquences : Test de Fisher exact : permet de tester si les fréquences entières observées sur 2 échantillons sont identiques ou non,
+library(tidyverse)
+library(ggpubr)
+library(rstatix) #chargement librairie 
+##Permis 
+table(DB_var_zg$freqtcu,DB_var_zg$permis)
+chisq.test(table(DB_var_zg$freqtcu,DB_var_zg$permis)) #pour deux variables qualitatives 
+summary(lm(DB_var_zg$freqtcu2~DB_var_zg$tailmng,data=DB_var_zg))
 #cor.test(table(New_DB_filtered$freqtcu,New_DB_filtered$permis))
 
 ```
+**tailmng**
 ```{r}
-table(New_DB_filtered$freqtcu,New_DB_filtered$tailmng)
-t.test(table(New_DB_filtered$freqtcu,New_DB_filtered$tailmng)
+#On va se ref aux fréquences : Test de Fisher exact : permet de tester si les fréquences entières observées sur 2 échantillons sont identiques ou non,
+table(DB_var_zg$freqtcu,DB_var_zg$tailmng)
+fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$tailmng)
+)
+summary(lm(DB_var_zg$freqtcu2~DB_var_zg$tailmng,data=DB_var_zg))
+
+```
+**car_ownership** 
+```{r}
+table(DB_var_zg$freqtcu,DB_var_zg$car_ownership)
+chisq.test(table(DB_var_zg$freqtcu,DB_var_zg$car_ownership))
+```
+**Autres variables**
+```{r}
+table(DB_var_zg$freqtcu,DB_var_zg$Nb_actif) #Nb_actif 
+fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_actif),simulate.p.value=TRUE
+)
+summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_actif,data=DB_var_zg))
+```
+
+```{r}
+table(DB_var_zg$freqtcu,DB_var_zg$Nb_inactif) #Nb inactif 
+fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_inactif),simulate.p.value=TRUE
+)
+summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_inactif,data=DB_var_zg))
+```
+```{r}
+#Nb_retraite
+table(DB_var_zg$freqtcu,DB_var_zg$Nb_retraites) 
+fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_retraites),simulate.p.value = TRUE 
+)
+summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_retraites,data=DB_var_zg))
+```
+```{r} 
+#Nb_etu
+table(DB_var_zg$freqtcu,DB_var_zg$Nb_etu) 
+fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_etu),simulate.p.value = TRUE 
+)
+summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_etu,data=DB_var_zg))
+
+```
+```{r}
+#Nb_log_col
+table(DB_var_zg$freqtcu,DB_var_zg$Nb_log_collec) 
+fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_log_collec),simulate.p.value = TRUE 
+)
+summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_log_collec,data=DB_var_zg))
+```
+```{r}
+#Nb_log_ind
+table(DB_var_zg$freqtcu,DB_var_zg$Nb_log_indiv) 
+fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_log_indiv),simulate.p.value = TRUE
+)
+
+summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_log_indiv,data=DB_var_zg))
+```
+
+```{r}
+#Nb_propriétaire 
+table(DB_var_zg$freqtcu,DB_var_zg$Nb_proprietaire) 
+fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_proprietaire),simulate.p.value = TRUE
+)
+summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_proprietaire,data=DB_var_zg))
+```
+
+```{r}
+#Nb_locataire
+table(DB_var_zg$freqtcu,DB_var_zg$Nb_locataire) 
+fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_locataire),simulate.p.value = TRUE 
+)
+summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_locataire,data=DB_var_zg))
+```
+```{r}
+#Nb_stat_parking
+table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_parking) 
+fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_parking),simulate.p.value = TRUE 
+)
+
+
+```
+
+```{r}
+#Nb_stat_garage
+table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_parking) 
+fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_parking),simulate.p.value = TRUE
+)
+```
+```{r}
+#Nb_stat_rue
+table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_rue) 
+fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_rue),simulate.p.value = TRUE 
 )
 
 ```
+```{r}
+#Nb_stat_interdit
+table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_interdit)
+fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_interdit),simulate.p.value = TRUE
+)
+```
+```{r}
+
+```
+
 
 \newpage
 ## Annexes
