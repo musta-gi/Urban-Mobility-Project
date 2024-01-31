@@ -54,6 +54,12 @@ L'échantillon comporte 5189 personnes
 
 ```
 
+```{r}
+library(cluster)
+library(factoextra)
+library(FactoMineR)
+```
+
 ```{r, include=FALSE}
 library(ggplot2)
 library(naniar)
@@ -91,6 +97,9 @@ DB_BBB <-DB_projet_full[!sample,]
 DB_BBB$freqtcu2<-DB_BBB$freqtcu
 ```
 
+```{r}
+
+```
 
 ```{r, include=FALSE}
 library(dplyr)
@@ -124,7 +133,18 @@ DB_reduced<-DB_reduced%>%mutate(car_ownership=ifelse(DB_reduced$VP_DISPO>0 & (DB
 
 DB_reduced$car_ownership<-factor(DB_reduced$car_ownership)
 str(DB_reduced[,c(116,117)])
+
+
 ```
+
+```{r}
+#DB_reduced$car_ownership_2<-c(1,nrow(DB_reduced))
+DB_reduced$car_ownership_2<-ifelse(DB_reduced$dispovp==1 | DB_reduced$dispovp==2,"OUI","NON")
+
+table(DB_reduced$car_ownership_2)
+
+```
+
 ## Variables du projet
 
 **Frecqtcu** : Variable d'intérêt (Y) catégorielle qui indique la fréquence d'utilisation des transports en communs chez une personne.\newline Elle prend les valeurs  :
@@ -157,12 +177,18 @@ DB_projet_full$permis<-factor(DB_projet_full$permis)
 
 ```
 
-**Car_ownership** : Variable indiquant si la personne effectuant le trajet possède une voiture
+**Car_ownership** : Variable indiquant si la personne effectuant le trajet possède une voiture pour ses déplacements
 
 ```{r}
-DB_projet_full<-DB_projet_full%>%mutate(car_ownership=ifelse(DB_projet_full$VP_DISPO>0 & (DB_projet_full$GENRE1!=2 | DB_projet_full$GENRE2!=2 | DB_projet_full$GENRE3!=2 | DB_projet_full$GENRE4!=2) & (DB_projet_full$POSSES1==1 | DB_projet_full$POSSES2==1 | DB_projet_full$POSSES3==1 | DB_projet_full$POSSES4==1),"OUI","NON"))
+#DB_projet_full<-DB_projet_full%>%mutate(car_ownership=ifelse(DB_projet_full$VP_DISPO>0 & (DB_projet_full$GENRE1!=2 | #DB_projet_full$GENRE2!=2 | DB_projet_full$GENRE3!=2 | DB_projet_full$GENRE4!=2) & (DB_projet_full$POSSES1==1 | #DB_projet_full$POSSES2==1 | DB_projet_full$POSSES3==1 | DB_projet_full$POSSES4==1),"OUI","NON"))
 
+#DB_projet_full$car_ownership<-factor(DB_projet_full$car_ownership)
+
+DB_projet_full<-DB_projet_full%>%mutate(car_ownership=ifelse(DB_projet_full$dispovp==1 | DB_projet_full$dispovp==2,"OUI","NON"))
 DB_projet_full$car_ownership<-factor(DB_projet_full$car_ownership)
+
+#table(DB_reduced$car_ownership_2)
+
 ```
 Cette variable dépent de trois variables qui sont VP_dispo qui doit être strictement supérieur à 0, puis GENRE (type de véhicule utilisé) , nous avons exclu les campings cars car notre sujet se prête au milieu urbain et de POSSE (Est ce que la voiture appartient à la personne).Nous nous sommes contentés de prendre exclusivement les véhicules possedés par la personne.\newline 
 
@@ -175,7 +201,7 @@ Nous exploiterons un ensemble de caractéristiques socio-économiques puis certa
 
 ```{r, include=FALSE}
 # Variables liées au confort 
-Variables_supp<-c(1,2,7,8,20,21,47,49,54,55,56,57,59,62,63,87,88,89,107,108,112,113,117) #c'est là qu'on va ajouter nos variables 
+Variables_supp<-c(1,2,6,7,8,20,21,47,49,53,54,55,56,57,59,60,61,62,63,76,87,88,89,91,102,107,108,109,112,113,115,117) #c'est là qu'on va ajouter nos variables 
 str(DB_reduced[,Variables_supp])
 
 New_DB<-cbind(DB_projet_full[,Variables_supp],DB_projet_full$freqtcu,DB_projet_full$permis,DB_projet_full$tailmng,DB_projet_full$car_ownership) #création de la nouvelles bases de données 
@@ -187,7 +213,7 @@ New_DB<-rename(New_DB,"car_ownership"="DB_projet_full$car_ownership")
 New_DB<-rename(New_DB,"PBM_STAT_GENERAL"="PBM_STAT")
 
 ```
-
+Cette base de données va regrouper toutes les variables nécessaires à notre étude puis on la redivisera encore par la suite pour notamment l'utilisation de cluster 
 ```{r,include=FALSE}
 New_DB$TYPE_HAB<-replace(New_DB$TYPE_HAB,New_DB$TYPE_HAB==1,"INDIVIDUEL_ISO")
 New_DB$TYPE_HAB<-replace(New_DB$TYPE_HAB,New_DB$TYPE_HAB==2,"INDIVIDUEL_COLE")
@@ -204,12 +230,24 @@ New_DB$TYPE_OCU<-replace(New_DB$TYPE_OCU,New_DB$TYPE_OCU==4,"LOGE_GRATUIT")
 New_DB$TYPE_OCU<-replace(New_DB$TYPE_OCU,New_DB$TYPE_OCU==5,"AUTRE")
 New_DB$TYPE_OCU<-factor(New_DB$TYPE_OCU)
 
+New_DB$jourdepl<-replace(New_DB$jourdepl,New_DB$jourdepl==1,"LUNDI")
+New_DB$jourdepl<-replace(New_DB$jourdepl,New_DB$jourdepl==2,"MARDI")
+New_DB$jourdepl<-replace(New_DB$jourdepl,New_DB$jourdepl==3,"MERCREDI")
+New_DB$jourdepl<-replace(New_DB$jourdepl,New_DB$jourdepl==4,"JEUDI")
+New_DB$jourdepl<-replace(New_DB$jourdepl,New_DB$jourdepl==5,"VENDREDI")
+New_DB$jourdepl<-factor(New_DB$jourdepl)
+
+
+
+
+
+
 New_DB<-New_DB%>%mutate(LIEU_STAT1=ifelse(is.na(LIEU_STAT1),0,LIEU_STAT1))
 New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==1,"GARAGE/BOX")
 New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==2,"RUE")
 New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==3,"PARKING PUBLIC")
 New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==4,"PARKING PRIVÉ")
-New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==5,"NON") #traitement des valeurs manquantes 
+New_DB$LIEU_STAT1<-replace(New_DB$LIEU_STAT1,New_DB$LIEU_STAT1==0,"PAS_INFO") #traitement des valeurs manquantes 
 New_DB$LIEU_STAT1<-factor(New_DB$LIEU_STAT1)
 
 New_DB<-New_DB%>%mutate(TYPE_STAT1=ifelse(is.na(TYPE_STAT1),0,TYPE_STAT1))
@@ -217,32 +255,30 @@ New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==1,"INTERDIT")
 New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==2,"GRATUIT")
 New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==3,"PAYANT")
 New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==4,"PAYÉ_TIERCE")
-New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==5,"NON") #traitement des valeurs manquantes on aura besoin de ça après 
-
-
+New_DB$TYPE_STAT1<-replace(New_DB$TYPE_STAT1,New_DB$TYPE_STAT1==0,"PAS_INFO") #traitement des valeurs manquantes on aura besoin de ça après 
 New_DB$TYPE_STAT1<-factor(New_DB$TYPE_STAT1)
 
+New_DB$sexe<-replace(New_DB$sexe,New_DB$sexe==1,"Homme")
+New_DB$sexe<-replace(New_DB$sexe,New_DB$sexe==2,"Femme")
+New_DB$sexe<-factor(New_DB$sexe)
 
-New_DB$ABO_TC<-replace(New_DB$ABO_TC,New_DB$ABO_TC==1,"OUI_GRATUIT")
-New_DB$ABO_TC<-replace(New_DB$ABO_TC,New_DB$ABO_TC==2,"OUI_PAYANT")
-New_DB$ABO_TC<-replace(New_DB$ABO_TC,New_DB$ABO_TC==3,"NON")
-New_DB$ABO_TC<-factor(New_DB$ABO_TC)
+New_DB$etabscol<-replace(New_DB$etabscol,New_DB$etabscol==2,"CAP")
+New_DB$etabscol<-replace(New_DB$etabscol,New_DB$etabscol==3,"BEP")
+New_DB$etabscol<-replace(New_DB$etabscol,New_DB$etabscol==4,"BAC")
+New_DB$etabscol<-replace(New_DB$etabscol,New_DB$etabscol==5,"BAC+2")
+New_DB$etabscol<-replace(New_DB$etabscol,New_DB$etabscol==6,"BAC >= 3")
+New_DB$etabscol<-replace(New_DB$etabscol,New_DB$etabscol==7,"APPRENTISSAGE")
+New_DB$etabscol<-replace(New_DB$etabscol,New_DB$etabscol==1,"PAS DIPLOME")
+New_DB$etabscol<-factor(New_DB$etabscol)
 
-New_DB$travdom<-replace(New_DB$travdom,New_DB$travdom==1,"OUI")
-New_DB$travdom<-replace(New_DB$travdom,New_DB$travdom==2,"NON")
-New_DB$travdom<-factor(New_DB$travdom)
 
-New_DB$PBM_STAT_GENERAL<-replace(New_DB$PBM_STAT_GENERAL,New_DB$PBM_STAT_GENERAL==1,"OUI")
-New_DB$PBM_STAT_GENERAL<-replace(New_DB$PBM_STAT_GENERAL,New_DB$PBM_STAT_GENERAL>=2,"NON")
-New_DB$PBM_STAT_GENERAL<-factor(New_DB$PBM_STAT_GENERAL)
 
-New_DB$STAT_TRAV<-replace(New_DB$STAT_TRAV,New_DB$STAT_TRAV==1,"OUI")
-New_DB$STAT_TRAV<-replace(New_DB$STAT_TRAV,New_DB$STAT_TRAV>=2,"NON")
-New_DB$STAT_TRAV<-factor(New_DB$STAT_TRAV)
 
-New_DB$prisecharge<-replace(New_DB$prisecharge,New_DB$prisecharge>=1,"NON")
-New_DB$prisecharge<-replace(New_DB$prisecharge,New_DB$prisecharge==3,"NON")
-New_DB$prisecharge<-factor(New_DB$prisecharge)
+
+
+
+
+
 
 
 New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 1, "TravaiPleinT")
@@ -256,16 +292,109 @@ New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 8, "Reste_auFoyer")
 New_DB$OCCU1 <- replace(New_DB$OCCU1, New_DB$OCCU1 == 9, "Autre")
 New_DB$OCCU1=factor(New_DB$OCCU1)
 
-
 New_DB$OCCU2 <- replace(New_DB$OCCU2, New_DB$OCCU2 == 0, "NON_Con")
 New_DB$OCCU2 <- replace(New_DB$OCCU2, New_DB$OCCU2 == 1, "Travail")
 New_DB$OCCU2 <- replace(New_DB$OCCU2, New_DB$OCCU2 == 2, "Etudes")
 New_DB$OCCU2=factor(New_DB$OCCU2)
 
+New_DB$csp<-replace(New_DB$csp,New_DB$csp==21 | New_DB$csp==22 | New_DB$csp==23 |New_DB$csp==31 | New_DB$csp==32 | New_DB$csp==36 | New_DB$csp==41 | New_DB$csp==46 | New_DB$csp==51 | New_DB$csp==54 | New_DB$csp==55,"HIGH_STATUT")
+New_DB$csp<-replace(New_DB$csp,New_DB$csp==10 | New_DB$csp==47 | New_DB$csp==48 |New_DB$csp==56 | New_DB$csp==61| New_DB$csp==66 | New_DB$csp==69 |New_DB$csp==81 | New_DB$csp==82 | New_DB$csp==90,"LOW_STATUT")
+New_DB$csp<-replace(New_DB$csp,New_DB$csp==83 | New_DB$csp==84 | New_DB$csp==85 | New_DB$csp==86 | New_DB$csp==87 | New_DB$csp==99 , "ETUDES")
+New_DB$csp<-factor(New_DB$csp)
 
-New_DB$sexe<-replace(New_DB$sexe,New_DB$sexe==1,"Homme")
-New_DB$sexe<-replace(New_DB$sexe,New_DB$sexe==2,"Femme")
-New_DB$sexe<-factor(New_DB$sexe)
+New_DB<-New_DB%>%mutate(ABO_TC=ifelse(is.na(ABO_TC),0,ABO_TC))
+New_DB$ABO_TC<-replace(New_DB$ABO_TC,New_DB$ABO_TC==1,"OUI_GRATUIT")
+New_DB$ABO_TC<-replace(New_DB$ABO_TC,New_DB$ABO_TC==2,"OUI_PAYANT")
+New_DB$ABO_TC<-replace(New_DB$ABO_TC,New_DB$ABO_TC==3,"NON")
+New_DB$ABO_TC<-replace(New_DB$ABO_TC,New_DB$ABO_TC==0,"PAS_INFO")
+New_DB$ABO_TC<-factor(New_DB$ABO_TC)
+
+New_DB<-New_DB%>%mutate(travdom=ifelse(is.na(travdom),0,travdom))
+New_DB$travdom<-replace(New_DB$travdom,New_DB$travdom==1,"OUI")
+New_DB$travdom<-replace(New_DB$travdom,New_DB$travdom==2,"NON")
+New_DB$travdom<-replace(New_DB$travdom,New_DB$travdom==0,"PAS_INFO")
+New_DB$travdom<-factor(New_DB$travdom)
+
+
+New_DB<-New_DB%>%mutate(zonetrav=ifelse(is.na(zonetrav),0,zonetrav))
+New_DB$zonetrav<-replace(New_DB$zonetrav,New_DB$zonetrav==0,"PAS_INFO")
+#New_DB<-New_DB%>%mutate(zonetrav=case_when(zonetrav %in% c(100,114)~"CENTRE VILLE"))
+New_DB$zonetrav<-replace(New_DB$zonetrav,New_DB$zonetrav %in% c(101001:114009),"CENTRE_VILLE")
+New_DB$zonetrav<-replace(New_DB$zonetrav,New_DB$zonetrav %in% c(115001:143009),"AGGLO_PROCHE")
+New_DB$zonetrav<-replace(New_DB$zonetrav,New_DB$zonetrav %in% c(201001:9039999),"HORS_GRENOBLE")
+New_DB$zonetrav<-factor(New_DB$zonetrav)
+
+
+New_DB<-New_DB%>%mutate(dispovp=ifelse(is.na(dispovp),0,dispovp))
+New_DB$dispovp<-replace(New_DB$dispovp,New_DB$dispovp==1,"OUI UTILISE")
+New_DB$dispovp<-replace(New_DB$dispovp,New_DB$dispovp==2,"OUI UTILISE PAS")
+New_DB$dispovp<-replace(New_DB$dispovp,New_DB$dispovp==3,"NON")
+New_DB$dispovp<-replace(New_DB$dispovp,New_DB$dispovp==0,"PAS INFO")
+New_DB$dispovp<-factor(New_DB$dispovp)
+
+
+
+
+New_DB<-New_DB%>%mutate(PBM_STAT_GENERAL=ifelse(is.na(PBM_STAT_GENERAL),0,PBM_STAT_GENERAL))
+New_DB$PBM_STAT_GENERAL<-replace(New_DB$PBM_STAT_GENERAL,New_DB$PBM_STAT_GENERAL==1,"OUI")
+New_DB$PBM_STAT_GENERAL<-replace(New_DB$PBM_STAT_GENERAL,New_DB$PBM_STAT_GENERAL==2,"NON PLACE RES")
+New_DB$PBM_STAT_GENERAL<-replace(New_DB$PBM_STAT_GENERAL,New_DB$PBM_STAT_GENERAL==3,"NON PLACE AUTOUR")
+New_DB$PBM_STAT_GENERAL<-replace(New_DB$PBM_STAT_GENERAL,New_DB$PBM_STAT_GENERAL==4,"NON HORAIRES")
+
+
+New_DB$PBM_STAT_GENERAL<-replace(New_DB$PBM_STAT_GENERAL,New_DB$PBM_STAT_GENERAL==0,"PAS_INFO")
+New_DB$PBM_STAT_GENERAL<-factor(New_DB$PBM_STAT_GENERAL)
+
+New_DB<-New_DB%>%mutate(STAT_TRAV=ifelse(is.na(STAT_TRAV),0,STAT_TRAV))
+New_DB$STAT_TRAV<-replace(New_DB$STAT_TRAV,New_DB$STAT_TRAV==1,"OUI")
+New_DB$STAT_TRAV<-replace(New_DB$STAT_TRAV,New_DB$STAT_TRAV==2,"NON PLACE RES")
+New_DB$STAT_TRAV<-replace(New_DB$STAT_TRAV,New_DB$STAT_TRAV==3,"NON PLACE AUTOUR")
+
+New_DB$STAT_TRAV<-replace(New_DB$STAT_TRAV,New_DB$STAT_TRAV==0,"PAS_INFO")
+New_DB$STAT_TRAV<-factor(New_DB$STAT_TRAV)
+
+
+New_DB$motifor<-replace(New_DB$motifor,New_DB$motifor %in% c(22:29),"ETUDES")
+New_DB$motifor<-replace(New_DB$motifor,New_DB$motifor %in% c(1:2),"DOMICILE")
+New_DB$motifor<-replace(New_DB$motifor,New_DB$motifor %in% c(11:12),"TRAVAIL")
+New_DB$motifor<-replace(New_DB$motifor,New_DB$motifor==21,"CRECHE")
+New_DB$motifor<-replace(New_DB$motifor,New_DB$motifor %in% c(31:34),"SHOOPING")
+New_DB$motifor<-replace(New_DB$motifor,New_DB$motifor %in% c(41:43),"ADMINISTRATIF")
+New_DB$motifor<-replace(New_DB$motifor,New_DB$motifor %in% c(51:54),"LOISIRS")
+New_DB$motifor<-replace(New_DB$motifor,New_DB$motifor %in% c(61:74),"AMENER/RECHERCHER QLQN")
+New_DB$motifor<-replace(New_DB$motifor,New_DB$motifor %in% c(81:99),"AUTRES")
+New_DB$motifor<-factor(New_DB$motifor)
+
+New_DB<-New_DB%>%mutate(prisecharge=ifelse(is.na(prisecharge),0,prisecharge))
+New_DB$prisecharge<-replace(New_DB$prisecharge,New_DB$prisecharge>=1,"NON")
+New_DB$prisecharge<-replace(New_DB$prisecharge,New_DB$prisecharge==3,"NON")
+New_DB$prisecharge<-replace(New_DB$prisecharge,New_DB$prisecharge==0,"PAS_INFO")
+New_DB$prisecharge<-factor(New_DB$prisecharge)
+
+New_DB<-New_DB%>%mutate(NAT_STAT=ifelse(is.na(NAT_STAT),0,NAT_STAT))
+New_DB$NAT_STAT<-replace(New_DB$NAT_STAT,New_DB$NAT_STAT==1,"INTERDIT")
+New_DB$NAT_STAT<-replace(New_DB$NAT_STAT,New_DB$NAT_STAT==2,"GRATUIT")
+New_DB$NAT_STAT<-replace(New_DB$NAT_STAT,New_DB$NAT_STAT==3,"PAYANT")
+New_DB$NAT_STAT<-replace(New_DB$NAT_STAT,New_DB$NAT_STAT==4,"PAYE_TIERCE")
+New_DB$NAT_STAT<-replace(New_DB$NAT_STAT,New_DB$NAT_STAT==0,"PAS_INFO")
+New_DB$NAT_STAT<-factor(New_DB$NAT_STAT) # on transofmre les données qualitiatives en vecteurs ce qui permet par la suite de faire des clustering par exemple. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -276,6 +405,9 @@ New_DB$sexe<-factor(New_DB$sexe)
 
 
 ```
+
+
+
 **Restriction géographique**
 Définissons ce que l'on entend par "transports en communs".\newline
 Pour notre étude nous nous concentrons sur les transports en communs de la société MTag,c'est à dire les tram et bus du réseau.\newline
@@ -294,227 +426,583 @@ New_DB<-dplyr::filter(New_DB,tir %in% Vec_zone) #on garde que les zones où il y
 **Restriction sur l'âge**\newline
 
 Il est nécessaire de préciser que les mineurs se déplacent majoritairement via les transports en communs car ils n'ont tout simplement pas le choix...\newline
-Pour ne pas être biaisé, il est judicieux de filtrer les mineurs de notre base de données ainsi que les personnes âgées de plus de 80ans. 
+Et aussi les étudiants car après plusieurs recherches, nous savons que les étudiants de l'étude utilisent majoritairement les transports en commun (plus de 80% d'entre eux), on détaillera cela un peu plus loin dans le rapport.  
 ```{r,include=FALSE}
-New_DB_filtered<-dplyr::filter(New_DB,age>=18 & age<=80)
+New_DB_filtered<-dplyr::filter(New_DB,age>=18 )
+New_DB_filtered<-dplyr::filter(New_DB,csp!='ETUDES')
+#table(New_DB_filtered$csp)
 
 New_DB_filtered<-rename(New_DB_filtered,"num_menage"="NO_MEN")
 ```
-Notre nouvelle base de données comprend maintenant 10 879 observations et 22 variables
+**Revue de la base de données **
+Il va falloir enlever les variables où il y a des valeurs manquantes 
+```{r}
+vis_miss(New_DB_filtered) 
+
+#ntraj 28% on va certainement l'enlever 
+```
+##Clustering 
+Les étudiants 
+
+**Test 0 Étudiants**
+```{r}
+New_DB_filtered_etu<-dplyr::filter(New_DB,csp=="ETUDES")
+New_DB_filtered_etu<-dplyr::filter(New_DB,OCCU1=="Etudiant", age %in% c(18:27)) 
+#New_DB_filtered_etu<-dplyr::filter(New_DB,OCCU2=="NON_Con")
+
+
+
+DB_pers_socio_etu<-New_DB_filtered_etu[,c(1,8,9,10,11,13,14,15,16,17,26,33,34,35,36)]
+DB_pers_socio_etu<-DB_pers_socio_etu[!duplicated(DB_pers_socio_etu$id_pers),]
+DB_pers_socio_etu<-dplyr::filter(DB_pers_socio_etu,!is.na(DB_pers_socio_etu$car_ownership))
+DB_pers_socio_etu<-dplyr::filter(DB_pers_socio_etu,!is.na(DB_pers_socio_etu$age))
+
+
+
+#vis_miss(DB_pers_socio_etu)
+```
+
+```{r}
+#table_2<-na.omit(DB_pers_socio_etu)
+barplot(table(New_DB_filtered_etu$age))
+```
+
+```{r}
+afm_etu<-FAMD(base=DB_pers_socio_etu,ncp=5)
+summary(afm_etu)
+```
+
+```{r}
+head(afm_etu$ind$coord,10)
+```
+
+```{r}
+pairs(afm_etu$ind$coord,cex=0.6)
+```
+
+```{r}
+md_etu<-dist(afm_etu$ind$coord)
+
+ch_etu<-hclust(md_etu,method='ward.D2')
+
+plot(ch_etu)
+```
+
+```{r}
+groups_etu<-cutree(ch_etu,k=2)
+
+table(groups_etu)
+```
+```{r}
+pairs(afm_etu$ind$coord,col=c('cornflowerblue','yellowgreen')[groups_etu],cew=0.75)
+```
+```{r}
+sapply(DB_pers_socio_etu[sapply(DB_pers_socio_etu,is.numeric)],mean)
+```
+```{r}
+lapply(DB_pers_socio_etu[sapply(DB_pers_socio_etu,is.numeric)],function(x){tapply(x,groups_etu,mean)})
+```
+```{r}
+sapply(DB_pers_socio_etu[sapply(DB_pers_socio_etu,is.factor)],function(x){prop.table(table(x))})
+```
+```{r}
+sapply(DB_pers_socio_etu[sapply(DB_pers_socio_etu,is.factor)],function(x){prop.table(table(groups_etu,x),1)})
+
+```
+On remarque deux groupes au sein des étudiants (392), il y a celui qui possède une voiture, le deuxième groupe (97% ont une voiture disponible pour aller au travail) et le premier groupe qui ne possède simplement pas de voiture (99%).\newline 
+Dans le premier groupe qui n'a pas de voiture à disposition plus de 83% utilisent les transports en communs de manière régulière et dans le deuxième groupe, on utilise toujours majoritairement les transports bien que le pourcentage de personne n'utilisant pas régulièrement les transports en communs soit de 46%.\newline
+Parmi ceux qui ont à disposition une voiture, c'est 60% qui l'utilise pour aller étudier ou retourner au domicil\newline
+Les lieux études ne diffèrent pas et l'abonnement gratuit aux TC est possedé par 20% des étudiants du premier groupe. On remarque que le fait d'avoir une voiture disponible facilite, dans un premier temps, la non prise des transports en communs. Le fait d'avoir une deuxième occupation incite les étudiants à avoir recours à une voiture. 
+
+**Test 1: Actifs ** 
+```{r}
+#Base donnée catégorie socio prof personnes 
+
+DB_pers_socio_1<-New_DB_filtered[,c(1,8,9,10,11,12,13,14,15,16,17,25,32,33,34,35)]
+DB_pers_socio_1<-DB_pers_socio_1[!duplicated(DB_pers_socio_1$id_pers),]
+DB_pers_socio_1<-dplyr::filter(DB_pers_socio_1,!is.na(DB_pers_socio_1$freqtcu))
+DB_pers_socio_1<-dplyr::filter(DB_pers_socio_1,!is.na(DB_pers_socio_1$car_ownership))
+
+DB_pers_socio_1<-dplyr::filter(DB_pers_socio_1,DB_pers_socio_1$zonetrav!="PAS_INFO")
+#vis_miss(DB_pers_socio_1) # un peu freqtcu manquant 1% on peut l'enlever 
+
+```
+
+```{r}
+#DB_cluster_2<-DB_cluster_1[sample(c(TRUE,FALSE),size=nrow(DB_cluster_1),replace=TRUE,prob=c(0.05,0.95)),]
+afm_1<-FAMD(base=DB_pers_socio_1,ncp=5)
+summary(afm_1)
+```
+
+```{r}
+#Affichage des coordonnées 5 variables latentes deux à deux orthogonales 
+head(afm_1$ind$coord,10)
+```
+```{r}
+#Mettre les individus deux à deux si on arrive à distinguer des patterns  des formes 
+
+pairs(afm_1$ind$coord,cex=0.6)
+
+#Trouver les groupes pas évident 
+```
+```{r}
+#Classification ascendante hiérarchique 
+md_1<-dist(afm_1$ind$coord)
+
+ch_1<-hclust(md_1,method='ward.D2')
+
+plot(ch_1)
+
+
+#Le bazar mais c'est normal au vu de tous les individus , le dendograme 
+
+#2carts de hauteur entre les paliers , ça donne une idée de la distance entre les clusters , ici deux groupes pas évident , peut être 3 groupes. Ici on tatonne pas comparé aux k-means où il faut tatonner pour trouver le bon nombre de groupe 
+```
+```{r}
+groups_1<-cutree(ch_1,k=3)
+
+table(groups_1)
+```
+```{r}
+pairs(afm_1$ind$coord,col=c('cornflowerblue','yellowgreen','red')[groups_1],cew=0.75)
+```
+```{r}
+sapply(DB_pers_socio_1[sapply(DB_pers_socio_1,is.numeric)],mean)
+```
+```{r}
+lapply(DB_pers_socio_1[sapply(DB_pers_socio_1,is.numeric)],function(x){tapply(x,groups_1,mean)})
+```
+```{r}
+sapply(DB_pers_socio_1[sapply(DB_pers_socio_1,is.factor)],function(x){prop.table(table(x))})
+```
+```{r}
+sapply(DB_pers_socio_1[sapply(DB_pers_socio_1,is.factor)],function(x){prop.table(table(groups_1,x),1)})
+
+```
+
+
+
+La base de données compte 1246 observations pour 15 variables, on a filtré les individus de cette base pour que les caractéristiques d'une personne apparaissent une seule fois, les variables sont toutes issues de la fiche Personne\newline
+On distingue 3 groupes respectivement de 914 , 305 et 27 personnes avec le groupe 2 qui comporte pour notre variable Y freqtcu une répartition de 24% Y=0 et 76% Y=1.\newline
+On remarque que pour ce groupe, 76% des gens possèdent une voiture au sens propre , 67% n'ont pas de voiture disponible pour se rendre au travail 47% se rendent travailler dans le centre ville de Grenoble contre 43% se rendant dans l'agglomération proche. 66% sont des travaileurs à plein temps et 33 % à temps partiel. 73% ont un statut social dit "élevé" avec 30% de BAC+>=3\newline
+60% ont un abonnement TC payant tandis que pour le groupe 1 avec Y=0 77% et Y=1 23% , 96% des personnes n'ont pas d'abonnement aux transports en communs.\newline
+Ce que l'on peut exprimer c'est une tendance à prendre les transports en communs fréquemment quand on ne dispose pas de voiture pour se rendre au travail. Avoir un abonnement gratuit aux TC n'a à priori  pas d'impact sur la prise des transports en communs. Le statut social contribue aussi bien à la prise fréquente de TC qu'à celle de la voiture\newline
+Le fait de travailler en ville contribue à la prise fréquente des TC.
+
+**Test 2 : Cluster avec Car_ownership : ça n'a pas été concluant** 
+Ici on va restreindre notre base de données avec les déplacements des personnes et l'influence des variables dites de confort reliées à la voiture , car_ownership n'est plus simplement le fait de posséder une voiture c'est plus global que cela   
+
+```{r}
+#c(6,7,8,9,17,18,19,20,21,23,24,28,31)
+DB_car_ownership<-New_DB_filtered[,c(8,9,18,25,32,33,35)]
+DB_car_ownership<-DB_car_ownership[!duplicated(DB_car_ownership$id_pers),]
+#DB_car_ownership<-dplyr::filter(DB_car_ownership,!is.na(DB_car_ownership$id_depl))
+#DB_car_ownership<-dplyr::filter(DB_car_ownership,!is.na(DB_car_ownership$duree))
+DB_car_ownership<-dplyr::filter(DB_car_ownership,!is.na(DB_car_ownership$car_ownership))
+DB_car_ownership<-dplyr::filter(DB_car_ownership,!is.na(DB_car_ownership$freqtcu))
+
+#DB_car_ownership<-dplyr::filter(DB_car_ownership,DB_car_ownership$PBM_STAT_GENERAL!="PAS_INFO")
+#DB_car_ownership<-dplyr::filter(DB_car_ownership,DB_car_ownership$STAT_TRAV!="PAS_INFO")
+
+vis_miss(DB_car_ownership)
+```
+```{r}
+table(DB_car_ownership$car_ownership)
+```
+
+```{r}
+afm_3<-FAMD(DB_car_ownership, ncp=5)
+summary(afm_3)
+```
+```{r}
+head(afm_3$ind$coord)
+```
+```{r}
+pairs(afm_3$ind$coord,cex=0.5)
+```
+```{r}
+md_3<-dist(afm_3$ind$coord)
+ch_3<-hclust(md_3,method="ward.D2")
+
+plot(ch_3)
+```
+```{r}
+groups_3<-cutree(ch_3,k=3)
+table(groups_3)
+```
+```{r}
+pairs(afm_3$ind$coord,col=c('cornflowerblue','yellowgreen','red')[groups_3],cew=0.75)
+```
+```{r}
+#lapply(DB_car_ownership[sapply(DB_car_ownership,is.numeric)],function(x){tapply(x,groups_3,sd)})
+lapply(DB_car_ownership[sapply(DB_car_ownership,is.numeric)],function(x){tapply(x,groups_3,mean)})
+#lapply(DB_car_ownership[sapply(DB_car_ownership,is.numeric)],function(x){tapply(x,groups_3,var)})
+
+
+```
+
+```{r}
+sapply(DB_car_ownership[sapply(DB_car_ownership,is.factor)],function(x){prop.table(table(groups_3,x),1)})
+
+```
+Le confort lié à la voiture se traduit par une place de parking disponible ou non une fois arrivé sur son lieu de travail ou d'études,il semblerait que le fait d'avoir une place de parking sur son lieu de travail encourage les gens a prendre leur voiture plutôt que les transports en communs. 66% des personnes du groupe 2 (75% des personnes n'ont pas une utilisation régulière des transports en communs) n'auraient pas de problèmes de stationnement au travail. 
+De plus, le simple fait d'avoir une voiture n'a pas un rôle significatif dans l'utilisation ou non des transports en communs.
+Il est important de noter qu'il y a beaucoup de valeurs manquantes en ce qui concerne les variables PBM STAT et STAT TRAV 
+
+**Test 3 : Trajet : concluant **
+
+
+
+```{r}
+DB_trip<-New_DB_filtered[,c(20,21,22,23,26,27,28,29,30,31,33,36)]
+DB_trip<-dplyr::filter(DB_trip,!is.na(DB_trip$id_traj))
+DB_trip<-dplyr::filter(DB_trip,!is.na(DB_trip$ntraj))
+DB_trip<-dplyr::filter(DB_trip,!is.na(DB_trip$Couteff))
+DB_trip<-dplyr::filter(DB_trip,!is.na(DB_trip$car_ownership))
+#DB_trip<-dplyr::filter(DB_trip,!is.na(DB_trip$D13))
+
+
+
+#vis_miss(DB_trip)
+
+```
+```{r}
+DB_trip_2<-DB_trip[,-c(5,6,9)]
+```
+
+```{r}
+afm_4<-FAMD(DB_trip, ncp=5)
+summary(afm_4)
+```
+```{r}
+head(afm_4$ind$coord)
+```
+```{r}
+pairs(afm_4$ind$coord,cex=0.5)
+```
+
+```{r}
+md_4<-dist(afm_4$ind$coord)
+ch_4<-hclust(md_4,method="ward.D2")
+
+plot(ch_4)
+```
+```{r}
+groups_4<-cutree(ch_4,k=3)
+table(groups_4)
+```
+```{r}
+#pairs(afm_4$ind$coord,col=c('cornflowerblue','yellowgreen')[groups_4],cew=0.75)
+
+```
+```{r}
+#lapply(DB_trip[sapply(DB_trip,is.numeric)],function(x){tapply(x,groups_4,sd)})
+lapply(DB_trip[sapply(DB_trip,is.numeric)],function(x){tapply(x,groups_4,mean)})
+#lapply(DB_trip[sapply(DB_trip,is.numeric)],function(x){tapply(x,groups_4,median)})
+
+#lapply(DB_trip[sapply(DB_trip,is.numeric)],function(x){tapply(x,groups_4,var)})
+```
+```{r}
+sapply(DB_trip[sapply(DB_trip,is.factor)],function(x){prop.table(table(groups_4,x),1)})
+
+```
+
+Notre clustering mix s'est porté sur un échantillon après filtrage de 4043 trajets, deux groupes ont pu être mis en évidence, dans le premier groupe (3599 trajets) 72% des trajets ont été faits par des personnes n'utilisant pas fréquemment les transports en communs et dans le deuxième group (444 trajets) 76% des trajets ont été faits par des personnes utilisant fréquemment les transports en communs.\newline
+En moyenne les temps de trajets sont plus longs avec l'utilisation des transports en communs ( btt_mean c'est à dire le temps passé dans un trajet quotidiennement qui vaut 268 minutes, dans le deuxième groupe contre 96 minutes dans le premier) ou bien duree qui est en moyene de 57 minutes contre 17 minutes dans le premier groupe.Il faudrait néanmmoins voir ce que nous disent le groupe travaillant sur les heures de pointes car il y a peut être un rapport différent durant ces horraires là.\newline
+Le motif de déplacement est assez similaire lorsqu'il s'agit de se rendre au travail, il n'y a pas de différence notoire, cependant, lorsqu'il s'agit de déposer une personne , l'usage des transports en communs n'est pas privilégié.\newline
+Toujours en lien avec notre variable (W) car_ownership, le fait d'avoir à disposition un véhicule favorise grandement son utilisation au détriment des TC , les trajets du premier groupe sont effectués avec 90% des personnes qui ont à disposition un véhicule contre 1 personne sur deux pour le deuxième groupe.
+
+
+
+
+
+
 ## Analyse Univariée\newline
 
 **Analyse Univariée : freqtcu**
 
-```{r,include=FALSE}
-summary(New_DB_filtered$freqtcu)
-counts<-table(New_DB_filtered$freqtcu)
-(counts/nrow(New_DB))*100
+```{r}
+summary(DB_pers_socio_1$freqtcu)
+counts<-table(DB_pers_socio_1$freqtcu)
+(counts/nrow(DB_pers_socio_1))*100
 
-barplot(table(New_DB$freqtcu))
-title("Proportion de gens prenant les transports en communs")
+
+barplot(counts)
+title("Fréquence d'utilisation des transports en communs")
 ```
-Dans notre base de données, il y a 46% des gens qui prennent les transports en communs de manière plus ou moins régulière.\newline
+63% des personnes de notre base de données ne prennent pas régulièrement les transports en communs et 37% de manière régulière. 
+
+
 **Analyse Univariée :permis**
 ```{r, include=FALSE}
-summary(New_DB$permis)
-barplot(table(New_DB$permis))
+summary(DB_pers_socio_1$permis)
+barplot(table(DB_pers_socio_1$permis))
 ```
 Toutes les personnes de notre échantillonnage possède le permis de conduire.\newline
 **Analyse Univariée : tailmng**
 ```{r,include=FALSE}
-summary(New_DB_filtered$tailmng)
+summary(DB_pers_socio_1$tailmng)
 #IQR(New_DB_filtered$tailmng)
-table(New_DB_filtered$tailmng)
-barplot(table(New_DB_filtered$tailmng))
+(table(DB_pers_socio_1$tailmng)/nrow(DB_pers_socio_1))*100
+barplot(table(DB_pers_socio_1$tailmng))
 title("Répartition du nombre de personnes par foyer")
 
 
-hist(table(New_DB_filtered$tailmng))
+#hist(table(DB_pers_socio_1$tailmng))
+
+
 ```
 Pour ce qu'il en est de tailmng, la moyenne étant plus élevée que la médiane nous avons une asymétrie du côté droit , c'est à dire qu'il y a une concentration plus importante de valeurs à gauche de la moyenne.\newline
+58% des gens de notre restriction géographique vivent seul, 37% vivent à deux , 5% vivent à trois et moins de 1% vit tout seul
 
 **Analyse Univariée : car_ownership**
 
 ```{r,include=FALSE}
-summary(New_DB_filtered$car_ownership)
-table(New_DB_filtered$car_ownership)
-barplot(table(New_DB_filtered$car_ownership))
+summary(DB_pers_socio_1$car_ownership)
+table(DB_pers_socio_1$car_ownership)
+barplot(table(DB_pers_socio_1$car_ownership))
 
-(table(New_DB_filtered$car_ownership)/nrow(New_DB_filtered))*100
+(table(DB_pers_socio_1$car_ownership)/nrow(DB_pers_socio_1))*100
 
 ```
-84.4% des gens qui ont le permis sont propriétaires d'un véhicule dans notre étude.\newline Pas de conclusions hâtives, cela sera explicité dans l'analyse bivariée.  
+80%  des gens auraient à disponibilité une voiture pour se rendre au travail ou chez eux.\newline 
 
 **Analyse Bivariée**
 
 Pour cette partie, nous allons faire appel à plusieurs tests statistiques pour tenter de comprendre les relations qu'il peut y avoir entre nos varialbes.\newline
 Le test statistique du Chi^2 est utile pour établir ou non une relation  entre deux variables qualitatives.\newline
-Tandis que le test statistique d
+
 
 ```{r}
 DB_var_zg<-New_DB_filtered[!duplicated(New_DB_filtered$id_pers),]
 #DB_var_zg<-allgreI faire avec allegreI 
 #DB_var_zg<-New_DB_filtered%>%group_by(tir) faire un group_by tir et trouver des variables relatives au trajet 
 ```
+
 **Création des variables pour l'analyse bivariée**
+
+```{r}
+#DB_ABV<-
+DB_ABV<-DB_pers_socio_1
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_permis=sum(permis=="YES"))
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_proprietaire_car=sum(car_ownership=="OUI"))
+
+
+
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_actif=sum(OCCU1=="TravailPleinT" | OCCU1=="TravailPartT"))
+#DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_inactif=sum(OCCU1=="RSA" | OCCU1=="Reste_auFoyer" | OCCU1=="Autre")) #pas d'inactif à vérifier 
+#DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_retraites=sum(OCCU1=="Retraite")) #pas de retraité à vérifier 
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_high_profil=sum(csp=="HIGH_STATUT"))
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_low_profil=sum(csp=="LOW_STATUT"))
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_BAC_PLUS=sum(etabscol=="BAC+2" | etabscol=="BAC>=3"))
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_DIP_PRO=sum(etabscol=="BEP" | etabscol=="CAP"))
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_ABO_TC_GRATUIT=sum(ABO_TC=="OUI_GRATUIT"))
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_ABO_TC_PAYANT=sum(ABO_TC=="OUI_PAYANT"))
+#DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_TT=sum(travdom=="OUI"))
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_trav_ville=sum(zonetrav=="CENTRE_VILLE"))
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_trav_agglo=sum(zonetrav=="AGGLO_PROCHE"))
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_trav_loin=sum(zonetrav=="HORS_GRENOBLE"))
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_voiture_dispo_utilisee=sum(dispovp=="OUI UTILISE"))
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_voiture_dispo_pas_utilisee=sum(dispovp=="OUI UTILISE PAS"))
+
+
+
+```
+
+```{r}
+#permis
+#table(DB_ABV$freqtcu,DB_ABV$permis)
+chisq.test(table(DB_ABV$freqtcu,DB_ABV$NB_permis)) #pour deux variables qualitatives
+
+summary(lm(DB_ABV$freqtcu2~DB_ABV$NB_permis,data=DB_ABV))
+
+#chisq p<2.2-16 
+#lm 1.472 10-6 
+```
+```{r}
+#tailmng
+fisher.test(table(DB_ABV$freqtcu,DB_ABV$tailmng))
+
+summary(lm(DB_ABV$freqtcu2~DB_ABV$tailmng,data = DB_ABV))
+
+# p-value 0.07685
+#R^2 0.005996
+```
+```{r}
+#nb_actif
+fisher.test(table(DB_ABV$freqtcu,DB_ABV$NB_actif),simulate.p.value = TRUE)
+summary(lm(DB_ABV$freqtcu2~DB_ABV$NB_actif,data=DB_ABV))
+
+#p-value 0.0004998
+#R^2 0.0007595
+```
+```{r}
+#high_profil
+fisher.test(table(DB_ABV$freqtcu,DB_ABV$NB_high_profil),simulate.p.value = TRUE)
+summary(lm(DB_ABV$freqtcu2~DB_ABV$NB_high_profil,data=DB_ABV))
+
+# pvalue = 0.0004998
+#R^2 = 0.001598
+```
+```{r}
+#low_profil
+fisher.test(table(DB_ABV$freqtcu,DB_ABV$NB_low_profil),simulate.p.value = TRUE)
+summary(lm(DB_ABV$freqtcu2~DB_ABV$NB_low_profil,data=DB_ABV))
+
+#p value = 0.0004998
+#R^2 0.003519
+```
+```{r}
+#trav_ville
+fisher.test(table(DB_ABV$freqtcu,DB_ABV$NB_trav_ville),simulate.p.value = TRUE)
+summary(lm(DB_ABV$freqtcu2~DB_ABV$NB_trav_ville))
+
+#p value = 0.0004998
+#R^2 = 0.005998
+```
+```{r}
+#trav_agglo
+fisher.test(table(DB_ABV$freqtcu,DB_ABV$NB_trav_agglo),simulate.p.value = TRUE)
+summary(lm(DB_ABV$freqtcu2~DB_ABV$NB_trav_agglo))
+
+#R^2 0.01874
+```
+```{r}
+#trav_loin
+fisher.test(table(DB_ABV$freqtcu,DB_ABV$NB_trav_loin),simulate.p.value = TRUE)
+summary(lm(DB_ABV$freqtcu2~DB_ABV$NB_trav_loin))
+
+#R^2 0.01611
+```
+```{r}
+#voiture_dispo_utilisee
+fisher.test(table(DB_ABV$freqtcu,DB_ABV$NB_voiture_dispo_utilisee),simulate.p.value = TRUE)
+summary(lm(DB_ABV$freqtcu2~DB_ABV$NB_voiture_dispo_utilisee))
+
+#R^2 0.04952
+```
+```{r}
+#voiture_pas_utilisee
+fisher.test(table(DB_ABV$freqtcu,DB_ABV$NB_voiture_dispo_pas_utilisee),simulate.p.value = TRUE)
+summary(lm(DB_ABV$freqtcu2~DB_ABV$NB_voiture_dispo_pas_utilisee))
+#R^2 0.04983
+```
+```{r}
+#ABO_TC_GRATUIT
+fisher.test(table(DB_ABV$freqtcu,DB_ABV$NB_ABO_TC_GRATUIT),simulate.p.value = TRUE)
+summary(lm(DB_ABV$freqtcu2~DB_ABV$NB_ABO_TC_GRATUIT))
+
+#R^2 0.03367
+```
+```{r}
+#ABO_TC_PAYANT
+fisher.test(table(DB_ABV$freqtcu,DB_ABV$NB_ABO_TC_PAYANT),simulate.p.value = TRUE)
+summary(lm(DB_ABV$freqtcu2~DB_ABV$NB_ABO_TC_PAYANT))
+#R^2 0.08841
+```
+```{r}
+#BAC_PLUS
+fisher.test(table(DB_ABV$freqtcu,DB_ABV$NB_BAC_PLUS),simulate.p.value = TRUE)
+summary(lm(DB_ABV$freqtcu2~DB_ABV$NB_BAC_PLUS))
+
+#R^2 0.005318
+```
 ```{r} 
-#DB_var_zg : zone grenoble 
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Plus_jeune=sum(min(age))) #variable plus jeune de la région
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_actif=sum(OCCU1=="TravailPleinT" | OCCU1=="TravailPartT")) #Nb_actif
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_inactif=sum(OCCU1=="Chomeur" | OCCU1=="Reste_auFoyer" | OCCU1=="Autre")) #Nb_inactif
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_retraites=sum(OCCU1=="Retraite")) #Nb_retraités
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_etu=sum(OCCU1=="Scolaire" | OCCU1=="Etudiant" | OCCU1=="Appreti_Stage")) #Nb_etudiants
+#DIP_PRO
+fisher.test(table(DB_ABV$freqtcu,DB_ABV$NB_DIP_PRO),simulate.p.value = TRUE)
+summary(lm(DB_ABV$freqtcu2~DB_ABV$NB_DIP_PRO))
+#R^2 0.009518
+```
+**Matrice de corrélation** 
+```{r}
+D=data.frame(DB_ABV$NB_DIP_PRO,DB_ABV$NB_BAC_PLUS,DB_ABV$NB_ABO_TC_GRATUIT,DB_ABV$NB_ABO_TC_PAYANT,DB_ABV$NB_voiture_dispo_utilisee,DB_ABV$NB_voiture_dispo_pas_utilisee,DB_ABV$NB_trav_loin,DB_ABV$NB_permis,DB_ABV$NB_trav_loin,DB_ABV$NB_trav_agglo,DB_ABV$NB_trav_ville,DB_ABV$NB_low_profil,DB_ABV$NB_high_profil,DB_ABV$NB_actif)
 
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_log_collec=sum(TYPE_HAB=="GRAND_COLLECTIF" | TYPE_HAB=="PETIT_COLLECTIF"))  #NB_log_collectif
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_log_indiv=sum(TYPE_HAB=="INDIVIDUEL_ISO" | TYPE_HAB=="INDIVIDUEL_COL")) #Nb_log_indiv
 
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_proprietaire=sum(TYPE_OCU=="PROPRIETAIRE" | TYPE_OCU=="LOGE_GRATUIT")) #Nb_proprietaire
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_locataire=sum(TYPE_OCU=="LOCATAIRE" | TYPE_OCU=="AUTRE_LOCATAIRE")) #Nb_locataire
 
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_parking=sum(LIEU_STAT1=="PARKING PUBLIC" | LIEU_STAT1=="PARKING PRIVÉ"))
-#DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_garage=sum(LIEU_STAT1=="GARAGE/BOX"))
-#DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_rue=sum(LIEU_STAT1=="RUE"))
+```
+```{r}
+library(corrplot)
+MC<-cor(D)
+#MC<-cor(DB_ABV[,-c(21,22,29)])
+symnum(MC,abbr.colnames=FALSE)
+#corrplot(MC,type="upper", order="hclust", tl.col="black", tl.srt=50)
+```
+
+**Cluster avec DB_pers_socio : pas concluant **
+
+```{r}
+library(cluster)
+library(factoextra)
+DB_cluster<-DB_ABV[,-c(3,4,5,6,8,9,11,12,13,14,15,16,17,21,22,29)]
+#DB_cluster<-dplyr::filter(DB_cluster,PBM_STAT_GENERAL!="PAS_INFO")
+```
+
+
+
+
+
+```{r}
+
+clara.res1 <- clara(DB_cluster, 1, samples = 1264, pamLike = TRUE)
+clara.res2 <- clara(DB_cluster, 2, samples = 1264, pamLike = TRUE)
+clara.res3 <- clara(DB_cluster, 3, samples = 1264, pamLike = TRUE)
+clara.res4 <- clara(DB_cluster, 4, samples = 1264, pamLike = TRUE)
+clara.res5 <- clara(DB_cluster, 5, samples = 1264, pamLike = TRUE)
+clara.res6 <- clara(DB_cluster, 6, samples = 1264, pamLike = TRUE)
+k_opt_2=c(clara.res1$silinfo$avg.width,clara.res2$silinfo$avg.width,clara.res3$silinfo$avg.width,clara.res4$silinfo$avg.width,clara.res5$silinfo$avg.width,clara.res6$silinfo$avg.width) 
+plot(k_opt_2,type="b")
+```
+
+```{r}
+set_plot_dimensions <- function(width_choice, height_choice) {
+        options(repr.plot.width=width_choice, repr.plot.height=height_choice) }
+set_plot_dimensions(12,2)
+plot(k_opt_2,type="b",cex = 0.6, lwd = 0.5, xlab = "Nombre de clusters", ylab = "% données récupérées ")
+```
+
+
+
+
+```{r}
+clara.res= clara(DB_cluster, 2, samples = 1264, pamLike = TRUE)
+fviz_cluster(clara.res, data = DB_cluster)
+clara.res$silinfo$clus.avg.widths
+```
+**Analyse du cluster **
+
+```{r}
+New_DB_pers_cluster<-cbind(DB_pers_socio_1,clara.res$clustering)
+names(New_DB_pers_cluster)[19]<-"Cluster_test"
 
 
 ```
 
 ```{r}
-
-
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_parking=sum(LIEU_STAT1=="PARKING PUBLIC" | LIEU_STAT1=="PARKING PRIVÉ"))
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_garage=sum(LIEU_STAT1=="GARAGE/BOX"))
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_rue=sum(LIEU_STAT1=="RUE"))
-
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_interdit=sum(TYPE_STAT1=="INTERDIT"))
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_gratuit=sum(TYPE_STAT1=="GRATUIT" | TYPE_STAT1=="PAYÉ_TIERCE"))
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_payant=sum(TYPE_STAT1=="PAYANT"))
-
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Haut_stat_social=sum(csp ==21 | csp==22 | csp==23 |csp==31 | csp==32 | csp==36 | csp==41 | csp==46 | csp==51 | csp==54 | csp==55)) #critères subjectifs à revoir les professions qu'on considère "hautes" 
-DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Bas_stat_social=sum(csp==10 | csp==47 | csp==48 |csp==56 | csp==66 | csp==69 |csp==81 | csp==82))
-
-
-
+Nb_gens<-New_DB_pers_cluster%>%group_by(Cluster_test)
 ```
 
 
-**Permis** 
-```{r}
-#On va se ref aux fréquences : Test de Fisher exact : permet de tester si les fréquences entières observées sur 2 échantillons sont identiques ou non,
-library(tidyverse)
-library(ggpubr)
-library(rstatix) #chargement librairie 
-##Permis 
-table(DB_var_zg$freqtcu,DB_var_zg$permis)
-chisq.test(table(DB_var_zg$freqtcu,DB_var_zg$permis)) #pour deux variables qualitatives 
-summary(lm(DB_var_zg$freqtcu2~DB_var_zg$tailmng,data=DB_var_zg))
-#cor.test(table(New_DB_filtered$freqtcu,New_DB_filtered$permis))
-
-```
-**tailmng**
-```{r}
-#On va se ref aux fréquences : Test de Fisher exact : permet de tester si les fréquences entières observées sur 2 échantillons sont identiques ou non,
-table(DB_var_zg$freqtcu,DB_var_zg$tailmng)
-fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$tailmng)
-)
-summary(lm(DB_var_zg$freqtcu2~DB_var_zg$tailmng,data=DB_var_zg))
-
-```
-**car_ownership** 
-```{r}
-table(DB_var_zg$freqtcu,DB_var_zg$car_ownership)
-chisq.test(table(DB_var_zg$freqtcu,DB_var_zg$car_ownership))
-```
-**Autres variables**
-```{r}
-table(DB_var_zg$freqtcu,DB_var_zg$Nb_actif) #Nb_actif 
-fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_actif),simulate.p.value=TRUE
-)
-summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_actif,data=DB_var_zg))
-```
-
-```{r}
-table(DB_var_zg$freqtcu,DB_var_zg$Nb_inactif) #Nb inactif 
-fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_inactif),simulate.p.value=TRUE
-)
-summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_inactif,data=DB_var_zg))
-```
-```{r}
-#Nb_retraite
-table(DB_var_zg$freqtcu,DB_var_zg$Nb_retraites) 
-fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_retraites),simulate.p.value = TRUE 
-)
-summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_retraites,data=DB_var_zg))
-```
-```{r} 
-#Nb_etu
-table(DB_var_zg$freqtcu,DB_var_zg$Nb_etu) 
-fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_etu),simulate.p.value = TRUE 
-)
-summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_etu,data=DB_var_zg))
-
-```
-```{r}
-#Nb_log_col
-table(DB_var_zg$freqtcu,DB_var_zg$Nb_log_collec) 
-fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_log_collec),simulate.p.value = TRUE 
-)
-summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_log_collec,data=DB_var_zg))
-```
-```{r}
-#Nb_log_ind
-table(DB_var_zg$freqtcu,DB_var_zg$Nb_log_indiv) 
-fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_log_indiv),simulate.p.value = TRUE
-)
-
-summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_log_indiv,data=DB_var_zg))
-```
-
-```{r}
-#Nb_propriétaire 
-table(DB_var_zg$freqtcu,DB_var_zg$Nb_proprietaire) 
-fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_proprietaire),simulate.p.value = TRUE
-)
-summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_proprietaire,data=DB_var_zg))
-```
-
-```{r}
-#Nb_locataire
-table(DB_var_zg$freqtcu,DB_var_zg$Nb_locataire) 
-fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_locataire),simulate.p.value = TRUE 
-)
-summary(lm(DB_var_zg$freqtcu2~DB_var_zg$Nb_locataire,data=DB_var_zg))
-```
-```{r}
-#Nb_stat_parking
-table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_parking) 
-fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_parking),simulate.p.value = TRUE 
-)
 
 
-```
 
-```{r}
-#Nb_stat_garage
-table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_parking) 
-fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_parking),simulate.p.value = TRUE
-)
-```
-```{r}
-#Nb_stat_rue
-table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_rue) 
-fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_rue),simulate.p.value = TRUE 
-)
 
-```
-```{r}
-#Nb_stat_interdit
-table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_interdit)
-fisher.test(table(DB_var_zg$freqtcu,DB_var_zg$Nb_stat_interdit),simulate.p.value = TRUE
-)
-```
-```{r}
 
-```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 \newpage
