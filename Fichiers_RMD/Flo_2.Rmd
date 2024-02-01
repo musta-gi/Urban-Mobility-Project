@@ -56,10 +56,13 @@ L'échantillon comporte 5189 personnes
 
 ```
 
+
+
 ```{r, include=TRUE, echo=FALSE}
 library(cluster)
 library(factoextra)
 library(FactoMineR)
+
 ```
 
 ```{r, include=FALSE}
@@ -933,55 +936,73 @@ symnum(MC,abbr.colnames=FALSE)
 ```
 
 
-**Modèle prédiction test**
-Avec ce qu'on a pu voir et l'importance de car_ownership 
-Premier test :
-HIGH STATUT + ABO TC GRATUIT + TRAVDOM(OUI) + ZONETRAV(CENTRE VILLE)+ car_ownership (OUI)= 1
-HIGH STATUT +ABO TC PAYANT + TRAVDOM(NON) + ZONETRAV(CENTRE VILLE) + car_ownership(OUI) = 2
+##Modèle prédiction test
+Avec ce qu'on a pu voir et l'importance de car_ownership , nous allons tenter de modéliser notre variable de "Confort_social" via plusieurs autres variables selon leurs valeurs. Le choix de ces variables a été fait via l'Analyse des Composants Multiples et nos clutering effectués.
 
-
+```{r libraries-reg-log}
+library(caret)
+library(ROCR)
+```
 
 ```{r}
+DB_test_model_2<-DB_pers_socio_1%>%
+  mutate(Confort_social=case_when(DB_pers_socio_1$csp %in%c("HIGH_STATUT")&DB_pers_socio_1$ABO_TC %in% c("OUI_GRATUIT","OUI_PAYANT") & DB_pers_socio_1$zonetrav %in% c("CENTRE_VILLE") &DB_pers_socio_1$car_ownership %in%c("OUI") ~ 1,
+              DB_pers_socio_1$csp %in% c("HIGH_STATUT")   & DB_pers_socio_1$zonetrav %in% c("CENTRE_VILLE","AGGLO_PROCHE") & DB_pers_socio_1$car_ownership %in% c("NON")& ABO_TC %in% c("OUI_GRATUIT","OUI_PAYANT","NON") ~2,
+                
+                
+                
+                TRUE~3))
+```
 
-DB_test_model <- DB_pers_socio_1 %>%
-  mutate(Comfort_social= case_when(DB_pers_socio_1$csp 
-                                  %in% c("HIGH_STATUT") 
-                                  & DB_pers_socio_1$ABO_TC %in% c("OUI_GRATUIT") 
-                                  & DB_pers_socio_1$travdom %in% c("OUI") 
-                                  & DB_pers_socio_1$zonetrav %in% c("CENTRE_VILLE") 
-                                  & DB_pers_socio_1$car_ownership %in% c("OUI") ~ 1,
-                                  DB_pers_socio_1$csp %in% c("HIGH_STATUT") 
-                                  & DB_pers_socio_1$ABO_TC %in% c("OUI_PAYANT") 
-                                  & DB_pers_socio_1$travdom %in% c("NON") 
-                                  & DB_pers_socio_1$zonetrav %in% c("CENTRE_VILLE") & DB_pers_socio_1$car_ownership %in% c("OUI") ~2 , TRUE~3))
+**Régression Logistique**
+```{r}
+splitIndex_2=createDataPartition(DB_test_model_2$freqtcu, p = 0.8, list = FALSE, times = 1)
+train_2=DB_test_model_2[ splitIndex_2,]
+test_2=DB_test_model_2[-splitIndex_2,]
+model_glm_test_2 =glm(formula = freqtcu ~ tailmng + Confort_social, data = train_2, family = "binomial")
 
-#DB_test_model<-replace()
+summary(model_glm_test_2)
 ```
 
 
 ```{r}
+predictions_2 <- predict(model_glm_test_2, newdata = test_2, type = "response")
+pred_class_2<-factor(ifelse(predictions_2>0.5,1,0))
+```
 
+```{r}
+confusionMatrix(pred_class_2,test_2$freqtcu)
+```
+Notre modèle de régression logistique après plusieurs essais est précis (accurate) à 0.6944 soit à ~69% , la sensitivité nous donne le pourcentage d'instances positives détectées soit 92,5% , la spécificité nous donne le pourcentage d'instances négatives détectées 29.35% , 69.23% des instances préditent positives sont positives et 69.23% des instances négatives préditent négatives sont négatives. 
+
+**Classificateur naif bayesienn**
+Un deuxième modèle de classification connu qui peut nous être utile , le classificateur naif bayesienn
+```{r}
+library(e1071)
+set.seed(234)
+# Split the data into training and test sets
+splitIndex_B = createDataPartition(DB_test_model_2$freqtcu, p = 0.8, list = FALSE, times = 1)
+train_B = DB_test_model_2[ splitIndex_B,]
+test_B = DB_test_model_2[-splitIndex_B,]
+# Train the SVM classifier
+naiv_1 = naiveBayes(freqtcu ~ tailmng+permis+Confort_social, data = train_B)
+# Make predictions on the test set
+predictions_B = predict(naiv_1, test_B)
+confusionMatrix(predictions_B, test_B$freqtcu)
 ```
 
 
+On peut voir que notre modèle est précis à 0.6984 soit ~ 70% , ce qui diffère avec le modèle de régression logistique c'est que notre sensitivité est égale à 94% et notre spécificité à 27% c'est à dire qu'il identifie 94% des instances positives et 27% des instances négatives, ce qui est plus élevé que notre modèle de régression logistique. 
 
 
 
+##Conclusion
 
+Le terme conclusion est un peu fort, nous dirions qu'il s'agit plus de l'état d'avancement de notre étude.\newline
+Ce que l'on peut en tirer çe sont des tendances et quelques idées reçues que l'on peut se faire , par exemple, le fait d'avoir un abonnement gratuit aux transports en communs n'est pas un facteur significatif de l'augmentation de la fréquence d'utilisation de ceux-çi.De plus, le fait d'avoir une voiture à disposition est un facteur clef dans la non prise des transports en communs. Nous avons voulu rapprocher des éléments extérieurs au fait d'avoir une voiture, comme par exemple, est ce que la personne avait des difficultés à se garer pour aller au travail, la réponse est que cela n'est pas non plus significatif dans la prise régulière ou non des transports en communs même si les personnes rencontrent des problèmes (cependant, beaucoup de données étaient manquantes car les personnes ne se sont pas positionnées), non il y a quelque chose peut être plus sistémique avec la voiture... mais cela est un autre sujet.\newline
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+Une autre tendance concerne les status socio-professionnels, les personnes avec un haut statut social disposant d'une voiture sont plus propices à l'utiliser que prendre les transports en communs.Le coût est un facteur qui a tendance à influencer les gens dans la fréquence d'utilisation des transports en communs.
+En ce qui concerne les pistes d'amélioration, nous avons commencé à explorer du côté des déplacements, avec comme tendances des déplacements réguliers pour venir chercher/déposer quelqu'un faits majoritairement via un véhicule autre que les transports en communs.La durée des trajets via transports en communs est nettement supérieure à celles des trajets en véhicule privé, cependant comme expliqué, l'heure de pointe peut inverser la tendance. 
 
 
 
