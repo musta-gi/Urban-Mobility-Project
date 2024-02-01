@@ -773,6 +773,7 @@ barplot(table(DB_pers_socio_1$car_ownership))
 
 Pour cette partie, nous allons faire appel à plusieurs tests statistiques pour tenter de comprendre les relations qu'il peut y avoir entre nos varialbes.\newline
 Le test statistique du Chi^2 est utile pour établir ou non une relation  entre deux variables qualitatives.\newline
+De plus, ces variables numériques vont nous aider à construire la matrice de corrélation
 
 
 
@@ -782,13 +783,13 @@ DB_var_zg<-New_DB_filtered[!duplicated(New_DB_filtered$id_pers),]
 #DB_var_zg<-New_DB_filtered%>%group_by(tir) faire un group_by tir et trouver des variables relatives au trajet 
 ```
 
-**Création des variables pour l'analyse bivariée**
+**Création des variables pour l'analyse bivariée et la matrice de corrélation**
 
 ```{r, include=TRUE, echo=FALSE}
 #DB_ABV<-
 DB_ABV<-DB_pers_socio_1
 DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_permis=sum(permis=="YES"))
-DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_proprietaire_car=sum(car_ownership=="OUI"))
+DB_ABV<-DB_ABV%>%group_by(tir)%>%mutate(NB_car_dispo=sum(car_ownership=="OUI"))
 
 
 
@@ -921,10 +922,8 @@ summary(lm(DB_ABV$freqtcu2~DB_ABV$NB_DIP_PRO))
 **Matrice de corrélation** 
 ```{r, include=TRUE, echo=FALSE}
 D=data.frame(DB_ABV$NB_DIP_PRO,DB_ABV$NB_BAC_PLUS,DB_ABV$NB_ABO_TC_GRATUIT,DB_ABV$NB_ABO_TC_PAYANT,DB_ABV$NB_trav_loin,DB_ABV$NB_permis,DB_ABV$NB_trav_loin,DB_ABV$NB_trav_agglo,DB_ABV$NB_trav_ville,DB_ABV$NB_low_profil,DB_ABV$NB_high_profil,DB_ABV$NB_actif)
-
-
-
 ```
+
 ```{r, include=TRUE, echo=FALSE}
 library(corrplot)
 MC<-cor(D)
@@ -934,7 +933,25 @@ symnum(MC,abbr.colnames=FALSE)
 ```
 
 
+**Modèle prédiction test**
+Avec ce qu'on a pu voir et l'importance de car_ownership 
+Premier test :
+HIGH STATUT + ABO TC GRATUIT + TRAVDOM(OUI) + ZONETRAV(CENTRE VILLE)+ car_ownership (OUI)= 1
+HIGH STATUT +ABO TC PAYANT + TRAVDOM(NON) + ZONETRAV(CENTRE VILLE) + car_ownership(OUI) = 2
 
+
+
+```{r}
+
+DB_test_model<-DB_pers_socio_1%>%mutate(Comfort_social=case_when(DB_pers_socio_1$csp %in% c("HIGH_STATUT") & DB_pers_socio_1$ABO_TC %in% c("OUI_GRATUIT") & DB_pers_socio_1$travdom %in% c("OUI") & DB_pers_socio_1$zonetrav %in% c("CENTRE_VILLE") & DB_pers_socio_1$car_ownership %in% c("OUI") ~ 1,DB_pers_socio_1$csp %in% c("HIGH_STATUT") & DB_pers_socio_1$ABO_TC %in% c("OUI_PAYANT") & DB_pers_socio_1$travdom %in% c("NON") & DB_pers_socio_1$zonetrav %in% c("CENTRE_VILLE") & DB_pers_socio_1$car_ownership %in% c("OUI") ~2 , TRUE~3))
+
+#DB_test_model<-replace()
+```
+
+
+```{r}
+
+```
 
 
 
