@@ -136,13 +136,13 @@ We can establish some criteria with 'r':
 
 Ratio of Missing Values per column = \frac{Number of Missing Values}{Total Number of Values}
 
-* Good: $r \leq  5%$
+* Good: $r \leq  5\%$
 
-* Medium: $5% < r \leq 20%$
+* Medium: $5\% < r \leq 20\%$
 
-* Bad: $20% < r \leq 45%$
+* Bad: $20\% < r \leq 45\%$
 
-* Very Bad: $r > 45%$
+* Very Bad: $r > 45\%$
 
 
 ```{r, include=FALSE}

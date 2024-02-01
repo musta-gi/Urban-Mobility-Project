@@ -953,8 +953,7 @@ DB_test_model <- DB_pers_socio_1 %>%
                                   DB_pers_socio_1$csp %in% c("HIGH_STATUT") 
                                   & DB_pers_socio_1$ABO_TC %in% c("OUI_PAYANT") 
                                   & DB_pers_socio_1$travdom %in% c("NON") 
-                                  & DB_pers_socio_1$zonetrav %in% c("CENTRE_VILLE") 
-                                  & DB_pers_socio_1$car_ownership %in% c("OUI") ~2 , TRUE~3))
+                                  & DB_pers_socio_1$zonetrav %in% c("CENTRE_VILLE") & DB_pers_socio_1$car_ownership %in% c("OUI") ~2 , TRUE~3))
 
 #DB_test_model<-replace()
 ```
