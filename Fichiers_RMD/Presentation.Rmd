@@ -3,9 +3,8 @@ title: '**Factors impacting the frequency of use of urban public transport in Gr
 author: "RACHDI Mustapha & \n SAUNIER Florent & \n SAADALLAH Malek"
 date: '**Janvier 2023**'
 output:
-  ioslides_presentation:
-    widescreen: true
-    smaller: true
+  html_document:
+    df_print: paged
 ---
 
 ## Objective
@@ -13,9 +12,6 @@ output:
   
 This project is based on data collected in 2010 in the Grenoble region. The study aims to determine the factors influencing the use of public transportation. To do this, we set our limits as follows: the Mtag network, which includes buses classified as "city" buses (we did not take into account regional buses such as the Grenoble - Chamrousse bus), and the tramway network, whose lines have been expanded since 2010.
 
-```{r, echo=FALSE}
-knitr::include_graphics("image_BUS_TRAM.jpg", )
-```
 \newpage 
 
 ## Methodology
@@ -26,9 +22,9 @@ knitr::include_graphics("image_BUS_TRAM.jpg", )
 
 3- Key variables definition
 
-4- Uni-variate Bi-variate analysis
+4- Univariate Bivariate analysis
 
-4- The model
+4- The model (Not completed yet)
 
 
 ## State of the art
@@ -52,15 +48,11 @@ knitr::include_graphics("image_BUS_TRAM.jpg", )
 
 * ***Spatial Characteristics:*** The percentage of origin and destination municipalities located in high-density areas.
 
-* ***Journey Characteristics:*** Mode of transport for the reference trip, frequency of the trip, and whether there's an imperative schedule.
-
 * ***General Mobility:*** Access to a car and the frequency of using alternative modes of transport.
 
 * ***Alternative-Specific Variables:*** Time, cost, comfort, and a combination of time and comfort.
 
 * ***Instrumental Motives:*** Objective level of service variables like travel cost, travel time, and frequency of the transport service.
-
-* ***Environmental Concern, Affective, and Symbolic Motives:*** Influence of environmental awareness and positive image promotion on mode choice.
 
 
 
@@ -92,7 +84,12 @@ pct_complete_case(DB_projet_full) # % de lignes complètes 0%
 
 * 116 columns: variables $=> medium-sized$ database
 
-The database contains 30,702 rows and 116 columns, which correspond to our variables. We can classify it as a 'medium-sized' database, but one that will keep us busy. Regarding the number of missing values, considering all variables, we have 971,658 missing values, which is 27.3% of our database. Furthermore, 0% of the rows have all their values, and 21% of the columns have no missing values. It can be interesting to identify where the missing values are located. 
+* 971,658 missing values : 27.3% of the data base
+
+* 0% of the rows have all their values
+
+* 21% of the columns have no missing values
+
 
 \newline
 The sample includes 5,189 individuals. 
@@ -246,11 +243,7 @@ Depends on three variables:
 
 3 | POSSE: Does the person own the car
 
-## Project variables.{.build}
 
-### Car_ownership
-
-blabla
 
 ## Creating the new database
 
@@ -388,56 +381,60 @@ head(New_DB)
 ### Age restriction
 \newline
 
-Removing minors and very old people($> 88$ yo)
-```{r include=TRUE, echo= FALSE} 
-library(dbscan)
-test_age_db <- select(New_DB, age, tir)
-summary(test_age_db)
-
-dbscan_age <- dbscan(test_age_db, eps = 1, minPts = 500)
-
-plot(test_age_db, col = dbscan_age$cluster + 1L, main = "DBSCAN Clustering on Age")
-
-
-```
+Removing minors (< 18 yo) and very old people ($> 88$ yo)
 
 
 ```{r include=TRUE, echo= FALSE} 
-New_DB_filtered<-dplyr::filter(New_DB,age>=18 & age<=80)
+New_DB_filtered<-dplyr::filter(New_DB,age>=16 & age<=80)
 
 New_DB_filtered<-rename(New_DB_filtered,"num_menage"="NO_MEN")
+
+
+barplot(table(New_DB$age))
+title("Proportion de gens prenant les transports en communs")
+
 ```
 
 
 
 ## Univariate Analysis
 
+### Usage frequency
 
-**Analyse Univariée : freqtcu**
 
-```{r,include=FALSE}
-summary(New_DB_filtered$freqtcu)
+```{r,include=TRUE, echo= FALSE}
+#summary(New_DB_filtered$freqtcu)
 counts<-table(New_DB_filtered$freqtcu)
-(counts/nrow(New_DB))*100
+#(counts/nrow(New_DB))*100
 
 barplot(table(New_DB$freqtcu))
 title("Proportion de gens prenant les transports en communs")
 ```
-Dans notre base de données, il y a 46% des gens qui prennent les transports en communs de manière plus ou moins régulière.\newline
-**Analyse Univariée :permis**
-```{r, include=FALSE}
-summary(New_DB$permis)
+
+
+## Univariate Analysis
+
+### Driving license
+
+```{r, include=FALSE, echo= FALSE}
+
 barplot(table(New_DB$permis))
 ```
-Toutes les personnes de notre échantillonnage possède le permis de conduire.\newline
-**Analyse Univariée : tailmng**
-```{r,include=TRUE}
+
+**Everyone has a driving license.**
+\newline
+
+## Univariate Analysis
+
+### Household size
+
+```{r,include=TRUE, echo= FALSE}
 #summary(New_DB_filtered$tailmng)
 #IQR(New_DB_filtered$tailmng)
 #table(New_DB_filtered$tailmng)
+
 barplot(table(New_DB_filtered$tailmng))
 title("Répartition du nombre de personnes par foyer")
-
 
 #hist(table(New_DB_filtered$tailmng))
 ```
@@ -445,57 +442,16 @@ title("Répartition du nombre de personnes par foyer")
 
 
 ## Bivariate Analysis
-**Analyse Univariée : freqtcu**
-
-```{r include=TRUE, echo= FALSE} 
-summary(New_DB_filtered$freqtcu)
-counts<-table(New_DB_filtered$freqtcu)
-(counts/nrow(New_DB))*100
-
-barplot(table(New_DB$freqtcu))
-title("Proportion de gens prenant les transports en communs")
-```
-Dans notre base de données, il y a 46% des gens qui prennent les transports en communs de manière plus ou moins régulière.\newline
-**Analyse Univariée :permis**
-```{r include=TRUE, echo= FALSE} 
-summary(New_DB$permis)
-barplot(table(New_DB$permis))
-```
-Toutes les personnes de notre échantillonnage possède le permis de conduire.\newline
-**Analyse Univariée : tailmng**
-```{r include=TRUE, echo= FALSE} 
-summary(New_DB_filtered$tailmng)
-#IQR(New_DB_filtered$tailmng)
-table(New_DB_filtered$tailmng)
-barplot(table(New_DB_filtered$tailmng))
-title("Répartition du nombre de personnes par foyer")
 
 
-hist(table(New_DB_filtered$tailmng))
-```
-Pour ce qu'il en est de tailmng, la moyenne étant plus élevée que la médiane nous avons une asymétrie du côté droit , c'est à dire qu'il y a une concentration plus importante de valeurs à gauche de la moyenne.\newline
 
-**Analyse Univariée : car_ownership**
+**Chi-squared test**
+\newline
 
-```{r include=TRUE, echo= FALSE} 
-summary(New_DB_filtered$car_ownership)
-table(New_DB_filtered$car_ownership)
-barplot(table(New_DB_filtered$car_ownership))
-
-(table(New_DB_filtered$car_ownership)/nrow(New_DB_filtered))*100
-
-```
-84.4% des gens qui ont le permis sont propriétaires d'un véhicule dans notre étude.\newline Pas de conclusions hâtives, cela sera explicité dans l'analyse bivariée.  
-
-**Analyse Bivariée**
-
-Pour cette partie, nous allons faire appel à plusieurs tests statistiques pour tenter de comprendre les relations qu'il peut y avoir entre nos varialbes.\newline
-Le test statistique du Chi^2 est utile pour établir ou non une relation  entre deux variables qualitatives.\newline
-Tandis que le test statistique d
 ```{r include=TRUE, echo= FALSE} 
 DB_var_zg<-New_DB_filtered[!duplicated(New_DB_filtered$id_pers),]
 ```
-**Création des variables pour l'analyse bivariée**
+
 ```{r include=TRUE, echo= FALSE}  
 #DB_var_zg : zone grenoble 
 DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Plus_jeune=sum(min(age))) #variable plus jeune de la région
@@ -518,7 +474,7 @@ DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_parking=sum(LIEU_STAT1=="P
 ```
 
 
-```{r include=TRUE, echo= FALSE} 
+```{r include=FALSE, echo= FALSE} 
 
 
 DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Nb_stat_parking=sum(LIEU_STAT1=="PARKING PUBLIC" | LIEU_STAT1=="PARKING PRIVÉ"))
@@ -536,7 +492,7 @@ DB_var_zg<-DB_var_zg%>%group_by(tir)%>%mutate(Bas_stat_social=sum(csp==10 | csp=
 
 ```
 
-```{r include=TRUE, echo= FALSE} 
+```{r include=FALSE, echo= FALSE} 
 ##Permis 
 table(New_DB_filtered$freqtcu,New_DB_filtered$permis)
 chisq.test(table(New_DB_filtered$freqtcu,New_DB_filtered$permis))
@@ -544,60 +500,27 @@ chisq.test(table(New_DB_filtered$freqtcu,New_DB_filtered$permis))
 #cor.test(table(New_DB_filtered$freqtcu,New_DB_filtered$permis))
 
 ```
-```{r include=TRUE, echo= FALSE} 
+```{r include=FALSE, echo= FALSE} 
 table(New_DB_filtered$freqtcu,New_DB_filtered$tailmng)
 t.test(table(New_DB_filtered$freqtcu,New_DB_filtered$tailmng)
 )
 
 ```
+| Variable       | Fisher Test | Chisq test | R squared | Significance   |
+|----------------|-------------|------------|-----------|----------------|
+| tailmng        | 0.22        |            | 0.0021    | Moderate       |
+| car_ownership  |             | 2.2e-16    |           |                |
+| NB_actif       | 0.002       |            | 0.0016    | No significant |
+| NB_inactif     | 0.00039     |            | 0.006     | High significant |
+| NB_retraites   | 0.000498    |            | 0.01437   | High significant |
+| NB_etu         | 0.000498    |            | 0.04654   | High significant |
+| NB_log_ind     | 0.000498    |            | 0.04991   | High significant |
+| NB_proprietaire | 0.000498   |            | 0.01648   | High significant |
+| NB_locataire   | 0.000498    |            | 0.068     | High significant |
+| NB_log_col     | 0.000498    |            | 0.08347   | High significant |
+| NB_stat_parking | 0.000498   |            | 0.0059    | High significant |
+| NB_stat_garage | 0.000498    |            | 0.0065    | High significant |
+| NB_stat_rue    | 0.000498    |            | 0.004081  | significant     |
+| NB_stat_interdit | 0.000498  |            | 0.002658  | significant     |
 
-\newpage
-## Annexes
-
-
-```{r, include =FALSE}
-data_2<-DB_projet_full[,c(22:30)]
-vis_miss(
-  data_2,
-  cluster = FALSE,
-  sort_miss = FALSE,
-  show_perc = TRUE,
-  show_perc_col = TRUE,
-  large_data_size = 9e+06,
-  warn_large_data = TRUE
-)
-```
-```{r, include=TRUE}
-data_2<-DB_projet_full[,c(30:44)]
-vis_miss(
-  data_2,
-  cluster = FALSE,
-  sort_miss = FALSE,
-  show_perc = TRUE,
-  show_perc_col = TRUE,
-  large_data_size = 9e+06,
-  warn_large_data = TRUE
-)
-```
-
-*Listes variables à plus de 80% de valeurs manquantes*
-
--motoracc
--situveil
--STAT_TRAV
--TYPE_STAT4
--LIEU_STAT4
--POSSES4
--PUIS_VP4
--AN_VP4
--ENERGIE4
--GENRE4
--TYPE_STAT3
--LIEU_STAT3
--POSSES3
--PUIS_VP3
--AN_VP3
--ENERGIE3
--motdeacc
--nbarret
--abonpeage
+# What's next ?
