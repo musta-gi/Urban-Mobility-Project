@@ -25,6 +25,9 @@ knitr::include_graphics("Image_BUS_TRAM.jpg")
 
 
 ## Familiarisation avec la base de données
+```{r}
+install.packages(ROCR)
+```
 
 ```{r, include =FALSE}
 pacman::p_load(naniar)
@@ -56,10 +59,13 @@ L'échantillon comporte 5189 personnes
 
 ```
 
+
+
 ```{r, include=TRUE, echo=FALSE}
 library(cluster)
 library(factoextra)
 library(FactoMineR)
+
 ```
 
 ```{r, include=FALSE}
@@ -942,29 +948,97 @@ HIGH STATUT +ABO TC PAYANT + TRAVDOM(NON) + ZONETRAV(CENTRE VILLE) + car_ownersh
 
 
 ```{r}
-
-DB_test_model<-DB_pers_socio_1%>%mutate(Comfort_social=case_when(DB_pers_socio_1$csp %in% c("HIGH_STATUT") & DB_pers_socio_1$ABO_TC %in% c("OUI_GRATUIT") & DB_pers_socio_1$travdom %in% c("OUI") & DB_pers_socio_1$zonetrav %in% c("CENTRE_VILLE") & DB_pers_socio_1$car_ownership %in% c("OUI") ~ 1,DB_pers_socio_1$csp %in% c("HIGH_STATUT") & DB_pers_socio_1$ABO_TC %in% c("OUI_PAYANT") & DB_pers_socio_1$travdom %in% c("NON") & DB_pers_socio_1$zonetrav %in% c("CENTRE_VILLE") & DB_pers_socio_1$car_ownership %in% c("OUI") ~2 , TRUE~3))
+#Model 65% avec variables confort *** et tailmng * 
+DB_test_model_1<-DB_pers_socio_1%>%
+  mutate(Comfort_social=case_when(DB_pers_socio_1$csp %in%c("HIGH_STATUT")&DB_pers_socio_1$ABO_TC %in% c("OUI_GRATUIT","OUI_PAYANT") & DB_pers_socio_1$zonetrav %in% c("CENTRE_VILLE") &DB_pers_socio_1$car_ownership %in%c("OUI") ~ 1,
+              DB_pers_socio_1$csp %in% c("LOW_STATUT")   & DB_pers_socio_1$zonetrav %in% c("HORS_GRENOBLE") & DB_pers_socio_1$car_ownership %in% c("NON") ~3,
+                
+                
+                
+                TRUE~2))
 
 #DB_test_model<-replace()
 ```
 
 
-```{r}
 
+```{r libraries-reg-log}
+library(caret)
+library(ROCR)
+```
+
+```{r mod-reg-log}
+
+set.seed(123)
+
+splitIndex=createDataPartition(DB_test_model_1$freqtcu, p = 0.8, list = FALSE, times = 1)
+train=DB_test_model_1[ splitIndex,]
+test=DB_test_model_1[-splitIndex,]
+model_glm_test =glm(formula = freqtcu ~  tailmng + Comfort_social, data = train, family = "binomial")
+
+summary(model_glm_test)
+```
+
+```{r pred-mod-reg-log}
+predictions <- predict(model_glm_test, newdata = test, type = "response")
+pred_class<-factor(ifelse(predictions>0.5,1,0))
+#pred_class<-factor(predictions, levels = levels(test$freqtcu))
+#prediction_freqtcu_test= factor(predictions,levels=levels(test$freqtcu))
+
+
+
+```
+
+```{r}
+confusionMatrix(pred_class,test$freqtcu)
 ```
 
 
 
+```{r}
+DB_test_model_2<-DB_pers_socio_1%>%
+  mutate(Comfort_social=case_when(DB_pers_socio_1$csp %in%c("HIGH_STATUT")&DB_pers_socio_1$ABO_TC %in% c("OUI_GRATUIT","OUI_PAYANT") & DB_pers_socio_1$zonetrav %in% c("CENTRE_VILLE") &DB_pers_socio_1$car_ownership %in%c("OUI") ~ 1,
+              DB_pers_socio_1$csp %in% c("HIGH_STATUT")   & DB_pers_socio_1$zonetrav %in% c("CENTRE_VILLE","AGGLO_PROCHE") & DB_pers_socio_1$car_ownership %in% c("NON")& ABO_TC %in% c("OUI_GRATUIT","OUI_PAYANT","NON") ~2,
+                
+                
+                
+                TRUE~3))
+```
 
 
+```{r}
+splitIndex_2=createDataPartition(DB_test_model_2$freqtcu, p = 0.8, list = FALSE, times = 1)
+train_2=DB_test_model_2[ splitIndex_2,]
+test_2=DB_test_model_2[-splitIndex_2,]
+model_glm_test_2 =glm(formula = freqtcu ~ tailmng + Comfort_social, data = train_2, family = "binomial")
+
+summary(model_glm_test_2)
+```
 
 
+```{r}
+predictions_2 <- predict(model_glm_test_2, newdata = test_2, type = "response")
+pred_class_2<-factor(ifelse(predictions_2>0.5,1,0))
+```
+
+```{r}
+confusionMatrix(pred_class_2,test_2$freqtcu)
+```
 
 
-
-
-
-
+**Classificateur naif bayesienn**
+```{r}
+library(e1071)
+# Split the data into training and test sets
+splitIndex_B = createDataPartition(DB_test_model_2$freqtcu, p = 0.8, list = FALSE, times = 1)
+train_B = DB_test_model_2[ splitIndex_B,]
+test_B = DB_test_model_2[-splitIndex_B,]
+# Train the SVM classifier
+naiv_1 = naiveBayes(freqtcu ~ tailmng+permis+Comfort_social, data = train_B)
+# Make predictions on the test set
+predictions_B = predict(naiv_1, test_B)
+confusionMatrix(predictions_B, test_B$freqtcu)
+```
 
 
 
